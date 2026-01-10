@@ -1,0 +1,65 @@
+# ... (Giữ nguyên các import cũ) ...
+
+# --- 16. AI TƯ VẤN HỢP ĐỒNG (Updated) ---
+@login_required(login_url='login')
+def ai_contract_view(request):
+    if request.user.role != 'club_rep': return redirect('home')
+
+    suggested_salary = None
+    suggested_clauses = None
+    error = None
+
+    if request.method == 'POST':
+        player_name = request.POST.get('player_name')
+        start_date = request.POST.get('start_date')
+        duration = request.POST.get('duration')
+        
+        try:
+            genai.configure(api_key=GOOGLE_API_KEY)
+            
+            # Tự động tìm model tốt nhất
+            chosen_model = 'models/gemini-pro'
+            for m in genai.list_models():
+                if 'generateContent' in m.supported_generation_methods:
+                    if 'gemini' in m.name and 'flash' in m.name:
+                        chosen_model = m.name
+                        break
+            
+            model = genai.GenerativeModel(chosen_model)
+
+            # Prompt thông minh hơn: Yêu cầu tách biệt Lương và Điều khoản
+            prompt = f"""
+            Bạn là Giám đốc kỹ thuật CLB bóng đá tại V-League. 
+            Tôi dự định ký hợp đồng với cầu thủ: {player_name}.
+            - Ngày bắt đầu: {start_date}
+            - Thời hạn: {duration} năm.
+
+            Hãy giúp tôi 2 việc riêng biệt (trả lời ngắn gọn):
+            1. GỢI Ý MỨC LƯƠNG: Dựa trên tên tuổi cầu thủ này ở Việt Nam, hãy đưa ra một con số cụ thể (VND/tháng) hợp lý. Chỉ ghi số tiền.
+            2. ĐIỀU KHOẢN HỢP ĐỒNG: Soạn thảo các điều khoản quan trọng (Lương thưởng, trách nhiệm, kỷ luật, chấn thương) bằng ngôn ngữ pháp lý chuyên nghiệp.
+            
+            Định dạng trả về:
+            [LUONG]: <Số tiền>
+            [NOIDUNG]: <Nội dung chi tiết>
+            """
+            
+            response = model.generate_content(prompt)
+            raw_text = response.text
+
+            # Xử lý kết quả trả về để tách lương và nội dung
+            if "[LUONG]:" in raw_text and "[NOIDUNG]:" in raw_text:
+                parts = raw_text.split("[NOIDUNG]:")
+                suggested_salary = parts[0].replace("[LUONG]:", "").strip()
+                suggested_clauses = parts[1].strip()
+            else:
+                # Nếu AI trả lời không đúng định dạng, hiển thị nguyên văn
+                suggested_clauses = raw_text
+
+        except Exception as e:
+            error = f"Lỗi kết nối AI: {str(e)}"
+
+    return render(request, 'quanly/ai_contract.html', {
+        'suggested_salary': suggested_salary,
+        'suggested_clauses': suggested_clauses,
+        'error': error
+    })

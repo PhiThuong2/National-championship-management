@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Dự Đoán Tỉ Số</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="container mt-4">
+    <a href="{% url 'home' %}" class="btn btn-secondary mb-3">← Quay lại</a>
+    <h2 class="text-success border-bottom pb-2">🎲 Dự Đoán Tỉ Số</h2>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="row mt-3">
+        {% for match in matches %}
+        <div class="col-md-6 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white text-center">
+                    {{ match.match_date|date:"H:i - d/m/Y" }}
+                </div>
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ match.home_team.name }} vs {{ match.away_team.name }}</h5>
+                    <p class="card-text text-muted small mb-2"><i class="fas fa-map-marker-alt me-1"></i>{{
+                        match.home_team.stadium }}</p>
+
+                    <!-- AI Suggestion -->
+                    {% if match.id in ai_predictions_map %}
+                    {% with ai_pred=ai_predictions_map|get_item:match.id %}
+                    <div class="alert alert-info py-2 mt-2">
+                        <i class="fas fa-robot me-1"></i>
+                        <strong>AI gợi ý:</strong> {{ ai_pred.predicted_home_score }}-{{ ai_pred.predicted_away_score }}
+                        <small class="badge bg-success ms-2">{{ ai_pred.confidence_score|floatformat:0 }}%</small>
+                    </div>
+                    {% endwith %}
+                    {% endif %}
+
+                    {% if match.id in predicted_ids %}
+                    <button class="btn btn-secondary w-100" disabled>✅ Đã dự đoán</button>
+                    {% else %}
+                    <form action="{% url 'predict_match' match.id %}" method="POST"
+                        class="d-flex justify-content-center align-items-center gap-2 mt-3">
+                        {% csrf_token %}
+                        <input type="number" name="home_score" class="form-control text-center" style="width: 60px"
+                            required placeholder="0">
+                        <span class="fw-bold">-</span>
+                        <input type="number" name="away_score" class="form-control text-center" style="width: 60px"
+                            required placeholder="0">
+                        <button type="submit" class="btn btn-success">Gửi</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="alert alert-warning">Hiện chưa có trận đấu nào sắp diễn ra để dự đoán.</div>
+        {% endfor %}
+    </div>
+</body>
+
+</html>

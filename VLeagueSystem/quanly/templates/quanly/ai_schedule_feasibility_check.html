@@ -1,0 +1,52 @@
+{% extends 'quanly/base_admin.html' %}
+
+{% block title %}AI Schedule - Kiểm Tra Tính Khả Thi{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-4">
+        <h2><i class="fas fa-robot"></i> AI Tạo Lịch Thi Đấu Tự Động</h2>
+        <p class="text-muted">Bước 1/3: Kiểm tra tính khả thi</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-check-circle"></i> Chọn Mùa Giải</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="season" class="form-label fw-bold">Mùa giải cần tạo lịch:</label>
+                    <select name="season" id="season" class="form-select" required>
+                        <option value="">-- Chọn mùa giải --</option>
+                        {% for season in seasons %}
+                        <option value="{{ season.id }}">
+                            {{ season.name }} ({{ season.start_date }} - {{ season.end_date }})
+                            {% if season.is_active %}<span class="badge bg-success">Đang diễn ra</span>{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> <strong>Lưu ý:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Hệ thống sẽ kiểm tra xem mùa giải có đủ thời gian để tạo lịch không</li>
+                        <li>Với 14 đội, cần tối thiểu khoảng 130-150 ngày</li>
+                        <li>Khoảng nghỉ giữa các trận: tối thiểu 5 ngày</li>
+                    </ul>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-calculator"></i> Kiểm Tra Tính Khả Thi
+                </button>
+                <a href="{% url 'manage_matches' %}" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-arrow-left"></i> Quay Lại
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

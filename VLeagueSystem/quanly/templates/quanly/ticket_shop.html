@@ -1,0 +1,149 @@
+{% extends 'quanly/base_fan.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header & Points Display -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-white mb-0">Mua Vé V-League</h2>
+            <p class="text-muted mb-0">Dùng điểm thưởng để giảm giá vé xem trận!</p>
+        </div>
+        <div class="card bg-gradient text-white shadow"
+            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="card-body py-2 px-4 text-center">
+                <small class="text-white-50">Điểm của bạn</small>
+                <h3 class="mb-0 fw-bold">{{ user.reward_points|intcomma }} 🪙</h3>
+                <small class="text-white-50">= {{ user.reward_points|intcomma }}00 VND</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Ticket List -->
+    <div class="row">
+        {% for match in matches %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header bg-dark text-white text-center py-2">
+                    <small><i class="fas fa-calendar-alt me-1"></i>{{ match.match_date|date:"d/m/Y - H:i" }}</small>
+                </div>
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-around mb-3">
+                        <div class="text-center">
+                            {% if match.home_team.logo %}
+                            <img src="{{ match.home_team.logo.url }}" alt=""
+                                style="width: 50px; height: 50px; object-fit: contain;" class="mb-2">
+                            {% else %}
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mb-2"
+                                style="width: 50px; height: 50px;">⚽</div>
+                            {% endif %}
+                            <p class="mb-0 fw-bold small">{{ match.home_team.name }}</p>
+                        </div>
+                        <div class="text-muted fw-bold">VS</div>
+                        <div class="text-center">
+                            {% if match.away_team.logo %}
+                            <img src="{{ match.away_team.logo.url }}" alt=""
+                                style="width: 50px; height: 50px; object-fit: contain;" class="mb-2">
+                            {% else %}
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mb-2"
+                                style="width: 50px; height: 50px;">⚽</div>
+                            {% endif %}
+                            <p class="mb-0 fw-bold small">{{ match.away_team.name }}</p>
+                        </div>
+                    </div>
+
+                    <p class="mb-1 text-muted small">📍 {{ match.home_team.stadium|default:"Sân vận động" }}</p>
+                    <p class="mb-2 text-muted small">Vòng {{ match.round_number }}</p>
+
+                    <hr>
+
+                    <div class="mb-3">
+                        <p class="mb-1"><strong>Giá vé:</strong> <span class="text-danger fw-bold">100,000 VND</span>
+                        </p>
+                        {% if user.reward_points >= 1000 %}
+                        <p class="mb-0 text-success small">
+                            <i class="fas fa-gift me-1"></i>Có thể giảm tối đa: {{ user.reward_points|intcomma }}00 VND
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <form method="post" action="{% url 'buy_ticket' match.id %}">
+                        {% csrf_token %}
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small">Số lượng:</label>
+                                <input type="number" name="quantity" id="quantity_{{ match.id }}"
+                                    class="form-control form-control-sm" value="1" min="1" max="10"
+                                    onchange="updatePrice('{{ match.id }}')">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small">Dùng điểm:</label>
+                                <input type="number" name="points_used" id="points_{{ match.id }}"
+                                    class="form-control form-control-sm" value="0" min="0"
+                                    max="{{ user.reward_points }}" onchange="updatePrice('{{ match.id }}')">
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Đơn giá: 100,000 VND</small>
+                            <small class="text-muted">Tổng: </small>
+                            <span id="final_price_{{ match.id }}" class="fw-bold text-primary">100,000 VND</span>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm w-100">
+                            <i class="fas fa-ticket-alt me-1"></i>Mua Vé
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+            <p class="text-muted">Hiện tại chưa có trận đấu nào sắp diễn ra.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Exchange Rate Info -->
+    <div class="card bg-light border-0 mt-4">
+        <div class="card-body">
+            <h5 class="fw-bold"><i class="fas fa-info-circle text-primary me-2"></i>Quy đổi điểm thưởng</h5>
+            <ul class="mb-0">
+                <li><strong>1 điểm = 100 VND</strong> giảm giá vé.</li>
+                <li>Dự đoán đúng tỉ số: <span class="badge bg-success">+100 điểm</span></li>
+                <li>Dự đoán đúng kết quả: <span class="badge bg-warning text-dark">+50 điểm</span></li>
+                <li>Tham gia dự đoán: <span class="badge bg-secondary">+10 điểm</span></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updatePrice(matchId) {
+        const quantityInput = document.getElementById('quantity_' + matchId);
+        const pointsInput = document.getElementById('points_' + matchId);
+
+        const quantity = parseInt(quantityInput.value) || 1;
+        const pointsUsed = parseInt(pointsInput.value) || 0;
+
+        const basePrice = 100000; // VND
+        const totalPrice = basePrice * quantity;
+        const discount = pointsUsed * 100; // 1 point = 100 VND
+
+        let finalPrice = totalPrice - discount;
+        if (finalPrice < 0) finalPrice = 0;
+
+        document.getElementById('final_price_' + matchId).textContent =
+            finalPrice.toLocaleString('vi-VN') + ' VND';
+    }
+</script>
+{% endblock %}

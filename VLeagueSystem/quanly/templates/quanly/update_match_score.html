@@ -1,0 +1,211 @@
+{% extends 'quanly/base_admin.html' %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>⚽ Cập nhật Tỉ số & Sự kiện Trận đấu</h2>
+        <a href="{{ next_url }}" class="btn btn-secondary">← Quay lại</a>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{{ match.home_team.name }} vs {{ match.away_team.name }} - Vòng {{ match.round_number }}</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" id="scoreForm">
+                {% csrf_token %}
+                
+                <!-- Form Tỉ số -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Bàn thắng đội nhà</label>
+                        {{ score_form.home_score }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Bàn thắng đội khách</label>
+                        {{ score_form.away_score }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Trạng thái</label>
+                        {{ score_form.status }}
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Sự kiện hiện có -->
+                {% if existing_events %}
+                <div class="mb-4">
+                    <h6>Sự kiện đã nhập:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Phút</th>
+                                    <th>Loại</th>
+                                    <th>Cầu thủ</th>
+                                    <th>Đội</th>
+                                    <th>Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for event in existing_events %}
+                                <tr>
+                                    <td>{{ event.minute|default:"-" }}</td>
+                                    <td><span class="badge bg-info">{{ event.get_event_type_display }}</span></td>
+                                    <td>{{ event.player.name|default:"-" }}</td>
+                                    <td>{{ event.team.name }}</td>
+                                    <td>{{ event.notes|default:"-" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="clear_events" id="clear_events">
+                        <label class="form-check-label" for="clear_events">
+                            Xóa tất cả sự kiện cũ và nhập lại
+                        </label>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Form nhập sự kiện -->
+                <h6 class="mb-3">📝 Nhập sự kiện trong trận đấu:</h6>
+                <div id="eventsContainer">
+                    <div class="event-form mb-3 p-3 border rounded">
+                        <div class="row g-2">
+                            <div class="col-md-2">
+                                <label class="form-label small">Loại sự kiện</label>
+                                <select name="event_0_type" class="form-select form-select-sm">
+                                    <option value="">-- Chọn --</option>
+                                    <option value="GOAL">⚽ Ghi bàn</option>
+                                    <option value="ASSIST">🎯 Kiến tạo</option>
+                                    <option value="SAVE">🧤 Cứu thua</option>
+                                    <option value="INTERCEPTION">🛡️ Đánh chặn</option>
+                                    <option value="YELLOW_CARD">🟨 Thẻ vàng</option>
+                                    <option value="RED_CARD">🟥 Thẻ đỏ</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Cầu thủ</label>
+                                <select name="event_0_player" class="form-select form-select-sm">
+                                    <option value="">-- Chọn cầu thủ --</option>
+                                    <optgroup label="{{ match.home_team.name }}">
+                                        {% for p in home_players %}
+                                        <option value="{{ p.id }}">{{ p.name }} (#{{ p.jersey_number }})</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                    <optgroup label="{{ match.away_team.name }}">
+                                        {% for p in away_players %}
+                                        <option value="{{ p.id }}">{{ p.name }} (#{{ p.jersey_number }})</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small">Đội</label>
+                                <select name="event_0_team" class="form-select form-select-sm">
+                                    <option value="{{ match.home_team.id }}">{{ match.home_team.name }}</option>
+                                    <option value="{{ match.away_team.id }}">{{ match.away_team.name }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small">Phút</label>
+                                <input type="number" name="event_0_minute" class="form-control form-control-sm" min="0" max="120" placeholder="Phút">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Ghi chú</label>
+                                <input type="text" name="event_0_notes" class="form-control form-control-sm" placeholder="Ghi chú (tùy chọn)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="event_count" id="event_count" value="1">
+                
+                <div class="mb-3">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addEventForm()">+ Thêm sự kiện</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLastEvent()">- Xóa sự kiện cuối</button>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-success btn-lg">💾 Lưu tỉ số & Sự kiện</button>
+                    <a href="{{ next_url }}" class="btn btn-secondary">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let eventIndex = 1;
+
+function addEventForm() {
+    const container = document.getElementById('eventsContainer');
+    const newForm = document.createElement('div');
+    newForm.className = 'event-form mb-3 p-3 border rounded';
+    newForm.innerHTML = `
+        <div class="row g-2">
+            <div class="col-md-2">
+                <label class="form-label small">Loại sự kiện</label>
+                <select name="event_${eventIndex}_type" class="form-select form-select-sm">
+                    <option value="">-- Chọn --</option>
+                    <option value="GOAL">⚽ Ghi bàn</option>
+                    <option value="ASSIST">🎯 Kiến tạo</option>
+                    <option value="SAVE">🧤 Cứu thua</option>
+                    <option value="INTERCEPTION">🛡️ Đánh chặn</option>
+                    <option value="YELLOW_CARD">🟨 Thẻ vàng</option>
+                    <option value="RED_CARD">🟥 Thẻ đỏ</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Cầu thủ</label>
+                <select name="event_${eventIndex}_player" class="form-select form-select-sm">
+                    <option value="">-- Chọn cầu thủ --</option>
+                    <optgroup label="{{ match.home_team.name }}">
+                        {% for p in home_players %}
+                        <option value="{{ p.id }}">{{ p.name }} (#{{ p.jersey_number }})</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="{{ match.away_team.name }}">
+                        {% for p in away_players %}
+                        <option value="{{ p.id }}">{{ p.name }} (#{{ p.jersey_number }})</option>
+                        {% endfor %}
+                    </optgroup>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Đội</label>
+                <select name="event_${eventIndex}_team" class="form-select form-select-sm">
+                    <option value="{{ match.home_team.id }}">{{ match.home_team.name }}</option>
+                    <option value="{{ match.away_team.id }}">{{ match.away_team.name }}</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Phút</label>
+                <input type="number" name="event_${eventIndex}_minute" class="form-control form-control-sm" min="0" max="120" placeholder="Phút">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Ghi chú</label>
+                <input type="text" name="event_${eventIndex}_notes" class="form-control form-control-sm" placeholder="Ghi chú (tùy chọn)">
+            </div>
+        </div>
+    `;
+    container.appendChild(newForm);
+    eventIndex++;
+    document.getElementById('event_count').value = eventIndex;
+}
+
+function removeLastEvent() {
+    const container = document.getElementById('eventsContainer');
+    if (container.children.length > 1) {
+        container.removeChild(container.lastChild);
+        eventIndex--;
+        document.getElementById('event_count').value = eventIndex;
+    }
+}
+</script>
+{% endblock %}
+
+
+

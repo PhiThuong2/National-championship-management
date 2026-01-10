@@ -1,0 +1,40 @@
+{% extends 'quanly/base_admin.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">{{ title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small">{{ field.errors.0 }}</div>
+                        {% endif %}
+                        <script>
+                            var el = document.getElementsByName("{{ field.name }}")[0];
+                            el.classList.add("form-control");
+                            if(el.tagName === 'SELECT') el.classList.add("form-select");
+                            if(el.type === 'checkbox') el.classList.replace("form-control", "form-check-input");
+                        </script>
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-flex gap-2 mt-4">
+                        <a href="javascript:history.back()" class="btn btn-secondary">Hủy bỏ</a>
+                        <button type="submit" class="btn btn-success fw-bold px-4">Lưu Dữ Liệu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

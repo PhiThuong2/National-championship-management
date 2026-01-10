@@ -1,0 +1,363 @@
+{% extends 'quanly/base_admin.html' %}
+{% load humanize %} {% block content %}
+<h2 class="mb-4">🚀 Trung Tâm Điều Hành V-League</h2>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary shadow h-100 border-0">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-uppercase small opacity-75">Thành viên</h6>
+                    <h2 class="display-6 fw-bold mb-0">{{ total_users }}</h2>
+                </div>
+                <div class="fs-1 opacity-50">👤</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-white bg-success shadow h-100 border-0">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-uppercase small opacity-75">CLB / Sân VĐ</h6>
+                        <h2 class="display-6 fw-bold mb-0">{{ total_teams }} <span class="fs-6 opacity-75">/ {{ total_stadiums }} sân</span></h2>
+                </div>
+                <div class="fs-1 opacity-50">🏟️</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-white bg-info shadow h-100 border-0">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-uppercase small opacity-75">Tổng Cầu thủ</h6>
+                    <h2 class="display-6 fw-bold mb-0">{{ total_players }}</h2>
+                </div>
+                <div class="fs-1 opacity-50">jw👟</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-white bg-warning text-dark shadow h-100 border-0">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-uppercase small opacity-75">Giao dịch / Tổng tiền</h6>
+                    <h4 class="fw-bold mb-0">{{ total_transfer_count }} vụ</h4>
+                    <small>{{ money_value }} đ</small>
+                </div>
+                <div class="fs-1 opacity-50">💸</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card shadow border-0">
+            <div class="card-header bg-white fw-bold py-3">📊 Top CLB Chi Tiêu Nhiều Nhất</div>
+            <div class="card-body">
+                <canvas id="spendingChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow border-0">
+            <div class="card-header bg-white fw-bold py-3">🌍 Cơ cấu Cầu thủ</div>
+            <div class="card-body">
+                <canvas id="playerChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BẢNG XẾP HẠNG VÀ XẾP HẠNG CÁ NHÂN -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow border-0">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <span class="fw-bold fs-5">🏆 BẢNG XẾP HẠNG V-LEAGUE</span>
+                <a href="{% url 'standings' %}" class="btn btn-sm btn-outline-light">Xem chi tiết</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px;" class="text-center">Hạng</th>
+                                <th>Đội bóng</th>
+                                <th class="text-center">Trận</th>
+                                <th class="text-center">Thắng</th>
+                                <th class="text-center">Hòa</th>
+                                <th class="text-center">Thua</th>
+                                <th class="text-center">BT</th>
+                                <th class="text-center">BB</th>
+                                <th class="text-center">HS</th>
+                                <th class="text-center fw-bold text-primary">Điểm</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for team_data in standings %}
+                            <tr>
+                                <td class="text-center">
+                                    <span
+                                        class="badge {% if team_data.rank <= 3 %}bg-warning text-dark{% elif team_data.rank <= 6 %}bg-info{% else %}bg-secondary{% endif %} rounded-pill">
+                                        {{ team_data.rank }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if team_data.team.logo %}
+                                        <img src="{{ team_data.team.logo.url }}" width="30" height="30"
+                                            class="rounded-circle me-2">
+                                        {% endif %}
+                                        <span class="fw-bold">{{ team_data.team.name }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-center">{{ team_data.played }}</td>
+                                <td class="text-center text-success fw-bold">{{ team_data.won }}</td>
+                                <td class="text-center">{{ team_data.drawn }}</td>
+                                <td class="text-center text-danger">{{ team_data.lost }}</td>
+                                <td class="text-center">{{ team_data.goals_for }}</td>
+                                <td class="text-center">{{ team_data.goals_against }}</td>
+                                <td
+                                    class="text-center {% if team_data.gd > 0 %}text-success{% elif team_data.gd < 0 %}text-danger{% endif %} fw-bold">
+                                    {{ team_data.gd|stringformat:"+d" }}
+                                </td>
+                                <td class="text-center fw-bold text-primary fs-5">{{ team_data.points }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="10" class="text-center py-4">Chưa có dữ liệu trận đấu</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- XẾP HẠNG CÁ NHÂN -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card shadow border-0 h-100">
+            <div class="card-header bg-danger text-white text-center">
+                <h6 class="mb-0 fw-bold">⚽ VUA PHÁ LƯỚI</h6>
+            </div>
+            <div class="card-body p-2">
+                <div class="list-group list-group-flush">
+                    {% for stat in top_scorers %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-2 py-2">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold small">{{ stat.player.name }}</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">{{ stat.player.team.name|default:"Tự do"}}</div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-danger rounded-pill">{{ stat.goals }}</span>
+                            <div class="text-muted" style="font-size: 0.7rem;">KT: {{ stat.assists }}</div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-3 text-muted small">Chưa có dữ liệu</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow border-0 h-100">
+            <div class="card-header bg-info text-white text-center">
+                <h6 class="mb-0 fw-bold">🎯 VUA KIẾN TẠO</h6>
+            </div>
+            <div class="card-body p-2">
+                <div class="list-group list-group-flush">
+                    {% for stat in top_assists %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-2 py-2">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold small">{{ stat.player.name }}</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">{{ stat.player.team.name|default:"Tự do"}}</div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-info rounded-pill">{{ stat.assists }}</span>
+                            <div class="text-muted" style="font-size: 0.7rem;">BT: {{ stat.goals }}</div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-3 text-muted small">Chưa có dữ liệu</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow border-0 h-100">
+            <div class="card-header bg-warning text-dark text-center">
+                <h6 class="mb-0 fw-bold">🧤 GĂNG TAY VÀNG</h6>
+            </div>
+            <div class="card-body p-2">
+                <div class="list-group list-group-flush">
+                    {% for stat in top_goalkeepers %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-2 py-2">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold small">{{ stat.player.name }}</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">{{ stat.player.team.name|default:"Tự do"}}</div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-warning text-dark rounded-pill">{{ stat.saves }}</span>
+                            <div class="text-muted" style="font-size: 0.7rem;">Lần cứu thua</div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-3 text-muted small">Chưa có dữ liệu</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow border-0 h-100">
+            <div class="card-header bg-dark text-white text-center">
+                <h6 class="mb-0 fw-bold">🟨 THẺ PHẠT</h6>
+            </div>
+            <div class="card-body p-2">
+                <div class="list-group list-group-flush">
+                    {% for item in top_cards %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-2 py-2">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold small">{{ item.stat.player.name }}</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">{{item.stat.player.team.name|default:"Tự do" }}</div>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-dark rounded-pill">{{ item.card_points }}</span>
+                            <div class="text-muted" style="font-size: 0.7rem;">
+                                🟨{{ item.yellow_cards }} 🟥{{ item.red_cards }}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-3 text-muted small">Chưa có dữ liệu</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow border-0 h-100">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <span class="fw-bold">⚽ Danh Sách Đội Bóng & Sân Nhà</span>
+                <a href="{% url 'manage_teams' %}" class="btn btn-sm btn-outline-light">Quản lý</a>
+            </div>
+            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>Logo</th>
+                            <th>Tên CLB</th>
+                            <th>Sân vận động</th>
+                            <th>HLV</th>
+                            <th>Thành phố</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for team in teams_list %}
+                        <tr>
+                            <td>
+                                {% if team.logo %}
+                                <img src="{{ team.logo.url }}" width="30" height="30" class="rounded-circle border">
+                                {% else %}
+                                <span class="badge bg-secondary rounded-circle">logo</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold">{{ team.name }}</td>
+                            <td>{{ team.stadium }}</td>
+                            <td>{{ team.current_coach.name|default:"--" }}</td>
+                            <td>{{ team.city }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">Chưa có dữ liệu</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow border-0 h-100">
+            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                <span class="fw-bold">⚡ Giao Dịch Mới Nhất</span>
+                <a href="{% url 'manage_transfers' %}" class="btn btn-sm btn-outline-light">Xem tất cả</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Ngày</th>
+                            <th>Cầu thủ</th>
+                            <th>Chuyển từ ➡️ sang</th>
+                            <th>Giá trị</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in recent_transfers %}
+                        <tr>
+                            <td class="small text-muted">{{ t.request_date|date:"d/m" }}</td>
+                            <td class="fw-bold">{{ t.player.name }}</td>
+                            <td class="small">
+                                {{ t.from_team.name }} ➡️ <span class="text-success fw-bold">{{ t.to_team.name }}</span>
+                            </td>
+                            <td class="fw-bold text-danger">{{ t.transfer_fee }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4">Chưa có giao dịch nào thành công.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ctx1 = document.getElementById('spendingChart').getContext('2d');
+    new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_labels| safe }},
+        datasets: [{
+            label: 'Chi tiêu (VND)',
+            data: {{ chart_values| safe }},
+        backgroundColor: '#0d6efd',
+        borderRadius: 5
+                }]
+            },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+
+    const ctx2 = document.getElementById('playerChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: ['Nội binh', 'Ngoại binh'],
+            datasets: [{
+                data: [{{ vn_players }}, {{ foreign_players }}],
+        backgroundColor: ['#198754', '#dc3545']
+    }]
+            },
+        options: { cutout: '70%' }
+        });
+</script>
+{% endblock %}

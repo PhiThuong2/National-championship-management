@@ -1,0 +1,93 @@
+{% load static %} <!DOCTYPE html>
+<html lang="vi">
+<head>
+    <title>Đăng ký - V-League</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            /* Ảnh nền giống trang Login */
+            background-image: url('{% static "img/hq720.jpg" %}');
+            
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Lớp phủ mờ (Overlay) */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.1); /* Mờ nhẹ 10% */
+            z-index: -1;
+        }
+
+        .card {
+            /* Hiệu ứng kính mờ */
+            background: rgba(255, 255, 255, 0.75); /* Đục hơn Login xíu để dễ nhìn nhiều ô nhập */
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            width: 450px; /* Rộng hơn Login xíu */
+            border: none;
+
+        }
+
+        /* Tùy chỉnh nút bấm màu XANH LÁ */
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #218838);
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card p-4">
+        <div class="card-body">
+            <div class="text-center mb-4">
+                <h1 style="font-size: 3rem;">🏟️</h1>
+                <h3 class="fw-bold text-success">ĐĂNG KÝ TÀI KHOẢN</h3> <p class="text-muted small">Trở thành Fan hâm mộ V-League ngay hôm nay!</p>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-secondary">{{ field.label }}</label>
+                        
+                        <input type="{{ field.field.widget.input_type }}" 
+                               name="{{ field.name }}" 
+                               class="form-control form-control-lg" 
+                               placeholder="Nhập {{ field.label }}..."
+                               required>
+                        
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">⚠️ {{ field.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-success btn-lg fw-bold">TẠO TÀI KHOẢN</button>
+                </div>
+            </form>
+            
+            <div class="mt-4 text-center">
+                <span class="text-muted">Đã có tài khoản?</span> 
+                <a href="{% url 'login' %}" class="text-decoration-none fw-bold text-success">Đăng nhập ngay</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

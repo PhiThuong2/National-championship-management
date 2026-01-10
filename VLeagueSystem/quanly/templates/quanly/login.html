@@ -1,0 +1,91 @@
+{% load static %} <!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng nhập - V-League Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            /* Dùng chung ảnh nền với trang Register cho đồng bộ */
+            background-image: url('{% static "img/hq720.jpg" %}');
+            
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Lớp phủ mờ */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.1); /* Mờ nhẹ */
+            z-index: -1;
+        }
+
+        .card {
+            /* Hiệu ứng kính mờ */
+            background: rgba(255, 255, 255, 0.75); /* Đục hơn Login xíu để dễ nhìn nhiều ô nhập */
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            width: 450px; /* Rộng hơn Login xíu */
+            border: none;
+
+        }
+
+
+        /* Tùy chỉnh nút bấm màu XANH LÁ */
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #218838);
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card p-4">
+        <div class="card-body">
+            <div class="text-center mb-4">
+                <h1 style="font-size: 3rem;">⚽</h1>
+                <h3 class="fw-bold text-success">ĐĂNG NHẬP</h3>
+                <p class="text-muted small">Hệ thống quản lý V-League</p>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                {% if form.errors %}
+                    <div class="alert alert-danger p-2 small text-center">Tên đăng nhập hoặc mật khẩu sai!</div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <input type="text" name="username" class="form-control form-control-lg" placeholder="Email / Tên đăng nhập" required>
+                </div>
+                
+                <div class="mb-4">
+                    <input type="password" name="password" class="form-control form-control-lg" placeholder="Mật khẩu" required>
+                </div>
+                
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-success btn-lg fw-bold">ĐĂNG NHẬP</button>
+                </div>
+            </form>
+            
+            <div class="mt-4 text-center">
+                <span class="text-muted">Chưa có tài khoản?</span> 
+                <a href="{% url 'register' %}" class="text-decoration-none fw-bold text-success">Đăng ký ngay</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,83 @@
+{% extends 'quanly/base_admin.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>👟 Quản lý Cầu Thủ ({{ page_obj.paginator.count }})</h2>
+    <a href="{% url 'add_player_admin' %}" class="btn btn-primary">+ Thêm Cầu Thủ</a>
+</div>
+
+<div class="card p-3 mb-3 bg-light border-0">
+    <form method="get" class="row g-2">
+        <div class="col-md-4">
+            <input type="text" name="q" class="form-control" placeholder="🔍 Tên cầu thủ..." value="{{ query|default:'' }}">
+        </div>
+        <div class="col-md-4">
+            <select name="team" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Tất cả Đội bóng --</option>
+                {% for t in teams %}
+                    <option value="{{ t.id }}" {% if team_filter == t.id|stringformat:"s" %}selected{% endif %}>{{ t.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Lọc</button>
+        </div>
+        <div class="col-md-2">
+            <a href="{% url 'manage_players' %}" class="btn btn-secondary w-100">Reset</a>
+        </div>
+    </form>
+</div>
+
+<div class="card shadow">
+    <table class="table table-striped mb-0">
+        <thead class="table-dark">
+            <tr>
+                <th>STT</th>
+                <th>Tên cầu thủ</th>
+                <th>Đội bóng</th>
+                <th>Vị trí</th>
+                <th>Số áo</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in page_obj %}
+            <tr>
+                <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+                <td class="fw-bold">{{ p.name }}</td>
+                <td>
+                    {% if p.team %}
+                        <span class="badge bg-primary">{{ p.team.name }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Tự do</span>
+                    {% endif %}
+                </td>
+                <td>{{ p.get_position_display }}</td>
+                <td>{{ p.jersey_number }}</td>
+                <td>
+<a href="{% url 'edit_player_admin' p.id %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm btn-info">Sửa</a>                    <a href="{% url 'delete_player_admin' p.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Xóa?')">Xóa</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center py-3">Không tìm thấy cầu thủ nào.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-3 d-flex justify-content-center">
+    <nav>
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page=1&q={{ query }}&team={{ team_filter }}">«</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&team={{ team_filter }}">Trước</a></li>
+            {% endif %}
+            <li class="page-item disabled"><span class="page-link">Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query }}&team={{ team_filter }}">Sau</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&q={{ query }}&team={{ team_filter }}">»</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endblock %}

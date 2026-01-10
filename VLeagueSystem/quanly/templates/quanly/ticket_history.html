@@ -1,0 +1,117 @@
+{% extends 'quanly/base_fan.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-white mb-0"><i class="fas fa-history me-2"></i>Lịch Sử Vé Đã Mua</h2>
+        <a href="{% url 'ticket_shop' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Mua vé mới</a>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        {% for ticket in tickets %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm ticket-card">
+                <div
+                    class="card-header {% if ticket.status == 'paid' %}bg-success{% else %}bg-secondary{% endif %} text-white d-flex justify-content-between align-items-center">
+                    <small class="fw-bold">Mã Vé: {{ ticket.ticket_code }}</small>
+                    <span class="badge bg-white text-dark small">{{ ticket.get_status_display }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <h6 class="fw-bold mb-1">{{ ticket.match.home_team.name }} vs {{ ticket.match.away_team.name }}
+                        </h6>
+                        <small class="text-muted"><i class="fas fa-clock me-1"></i>{{ ticket.match.match_date|date:"H:i- d/m/Y" }}</small>
+                    </div>
+
+                    <div class="d-flex justify-content-center mb-3">
+                        <!-- QR Code Display -->
+                        {% if ticket.qr_code %}
+                        <img src="{{ ticket.qr_code.url }}" alt="QR Code" class="img-thumbnail"
+                            style="width: 150px; height: 150px;">
+                        {% else %}
+                        <div class="bg-light d-flex align-items-center justify-content-center text-muted"
+                            style="width: 150px; height: 150px;">
+                            <small>Đang tạo QR...</small>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <ul class="list-group list-group-flush small mb-3">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Sân vận động:</span>
+                            <span class="fw-bold">{{ ticket.match.home_team.stadium }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Giá vé:</span>
+                            <span>100,000 VND</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between text-success">
+                            <span class="text-muted">Giảm giá:</span>
+                            <span>-{{ ticket.discount|intcomma }} VND</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between bg-light fw-bold">
+                            <span>Thực trả:</span>
+                            <span class="text-primary">{{ ticket.final_amount|intcomma }} VND</span>
+                        </li>
+                    </ul>
+
+                    <div class="d-grid">
+                        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#ticketModal{{ ticket.id }}">
+                            <i class="fas fa-expand me-1"></i>Xem Chi Tiết
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detail Modal -->
+        <div class="modal fade" id="ticketModal{{ ticket.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title fw-bold">Vé Điện Tử - {{ ticket.ticket_code }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        {% if ticket.qr_code %}
+                        <img src="{{ ticket.qr_code.url }}" alt="QR Code" class="img-fluid mb-3"
+                            style="max-width: 250px;">
+                        {% endif %}
+                        <h4 class="fw-bold text-primary">{{ ticket.match.home_team.name }} vs {{ticket.match.away_team.name }}</h4>
+                        <p class="text-muted mb-1"><i class="fas fa-calendar-alt me-2"></i>{{ ticket.match.match_date|date:"l, d/m/Y" }}</p>
+                        <p class="text-muted mb-3"><i class="fas fa-clock me-2"></i>{{ ticket.match.match_date|date:"H:i" }}</p>
+                        <div class="alert alert-warning small">
+                            Vui lòng đưa mã QR này cho nhân viên soát vé tại cổng sân vận động.
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-center">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <div class="text-muted mb-3">
+                <i class="fas fa-ticket-alt fa-3x"></i>
+            </div>
+            <h4>Bạn chưa mua vé nào</h4>
+            <p class="text-muted">Hãy ghé thăm cửa hàng vé để ủng hộ đội bóng yêu thích!</p>
+            <a href="{% url 'ticket_shop' %}" class="btn btn-primary mt-2">Đến Cửa Hàng Vé</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

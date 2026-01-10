@@ -1,0 +1,224 @@
+{% extends 'quanly/base_club.html' %}
+{% block content %}
+<h2 class="mb-4">
+    🏟️ {{ team.name }}
+    <small class="text-muted fs-5 ms-3">
+        Sân: {{ team.stadium }} | HLV: {{ team.current_coach.name|default:"Chưa cập nhật" }}
+    </small>
+</h2>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card bg-white shadow-sm border-start border-primary border-4"
+            style="cursor: pointer; transition: all 0.3s;"
+            onclick="window.location.href='{% url 'club_players_list' %}'"
+            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.15)'"
+            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''">
+            <div class="card-body">
+                <h5 class="text-muted">Tổng cầu thủ</h5>
+                <h3>{{ total_players }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-white shadow-sm border-start border-warning border-4"
+            style="cursor: pointer; transition: all 0.3s;" onclick="loadExpiringContracts()"
+            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.15)'"
+            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''">
+            <div class="card-body">
+                <h5 class="text-muted">
+                    <i class="fas fa-calendar-times me-2"></i>Hợp đồng sắp hết hạn (2025)
+                </h5>
+                <h3 class="text-danger">{{ expiring_soon }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* --- CSS CHO TRẬN ĐẤU & TỈ SỐ (Derived from Home) --- */
+    .score-box {
+        font-size: 1.4rem;
+        font-weight: bold;
+        background: #343a40;
+        color: #fff;
+        padding: 4px 12px;
+        border-radius: 6px;
+        display: inline-block;
+        min-width: 80px;
+    }
+
+    .match-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .match-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center py-3">
+                <span>📅 Lịch thi đấu của CLB</span>
+                <a href="#" class="text-decoration-none small">Xem tất cả</a>
+            </div>
+            <div class="card-body bg-light">
+                {% for match in matches %}
+                <div
+                    class="match-card bg-white p-3 mb-3 rounded shadow-sm border-start border-5 {% if match.status == 'FINISHED' %}border-secondary{% else %}border-success{% endif %} position-relative">
+
+                    <span
+                        class="position-absolute top-0 end-0 badge bg-light text-muted border rounded-pill mt-2 me-2 small">
+                        Vòng {{ match.round_number }}
+                    </span>
+
+                    <div class="row align-items-center mt-2">
+                        <div class="col-4 text-end">
+                            <div class="d-flex align-items-center justify-content-end">
+                                <span class="fw-bold me-2 {% if match.home_team == team %}text-primary{% endif %}">
+                                    {{ match.home_team.name }}
+                                </span>
+
+                                {% if match.home_team.logo %}
+                                <img src="{{ match.home_team.logo.url }}" class="team-logo"
+                                    style="width:40px; height:40px; object-fit:contain;">
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-4 text-center">
+                            {% if match.status == 'FINISHED' %}
+                            <div class="score-box">{{ match.home_score }} - {{ match.away_score }}</div>
+                            <div class="small text-muted mt-1 fw-bold" style="font-size: 0.7rem;">FT</div>
+                            {% else %}
+                            <div class="fw-bold text-muted mb-1" style="font-size: 1.2rem;">VS</div>
+                            <div class="badge bg-primary bg-opacity-10 text-primary border border-primary">
+                                {{ match.match_date|date:"H:i d/m" }}
+                            </div>
+                            <div class="small text-muted mt-1">{{ match.home_team.stadium }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-4 text-start">
+                            <div class="d-flex align-items-center">
+                                {% if match.away_team.logo %}
+                                <img src="{{ match.away_team.logo.url }}" class="team-logo me-2"
+                                    style="width:40px; height:40px; object-fit:contain;">
+                                {% endif %}
+
+                                <span class="fw-bold {% if match.away_team == team %}text-primary{% endif %}">
+                                    {{ match.away_team.name }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-5 text-muted bg-white rounded shadow-sm border border-dashed">
+                    <i class="fas fa-calendar-times fa-3x mb-3 text-secondary opacity-50"></i>
+                    <h5>Chưa có lịch thi đấu</h5>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0 fw-bold text-center">🏆 BẢNG XẾP HẠNG V-LEAGUE</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th style="width: 40px;" class="text-center">Hạng</th>
+                                <th>Đội</th>
+                                <th class="text-center">T</th>
+                                <th class="text-center">HS</th>
+                                <th class="text-center fw-bold text-primary">Đ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for team_data in standings %}
+                            <tr {% if team_data.team.id ==   team.id %}class="table-warning fw-bold" {% endif %}>
+                                <td class="text-center">
+                                    {% if team_data.rank <= 3 %} <span
+                                        class="badge {% if team_data.rank == 1 %}bg-warning text-dark{% elif team_data.rank == 2 %}bg-secondary{% else %}bg-danger{% endif %} rounded-pill">
+                                        {{ team_data.rank }}
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary rounded-pill">{{ team_data.rank }}</span>
+                                        {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if team_data.team.logo %}
+                                        <img src="{{ team_data.team.logo.url }}" width="20" height="20"
+                                            class="me-2 rounded-circle">
+                                        {% endif %}
+                                        <span>{{ team_data.team.name }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-center">{{ team_data.played }}</td>
+                                <td
+                                    class="text-center {% if team_data.gd > 0 %}text-success{% elif team_data.gd < 0 %}text-danger{% endif %} fw-bold">
+                                    {{ team_data.gd|stringformat:"+d" }}
+                                </td>
+                                <td class="text-center fw-bold text-primary">{{ team_data.points }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3 text-muted">Chưa có dữ liệu</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal cho danh sách hợp đồng sắp hết hạn -->
+<div class="modal fade" id="expiringContractsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="expiringContractsContent">
+            <!-- Nội dung sẽ được load bằng AJAX -->
+            <div class="text-center p-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang tải...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Hàm load danh sách hợp đồng sắp hết hạn
+    function loadExpiringContracts() {
+        var modal = new bootstrap.Modal(document.getElementById('expiringContractsModal'));
+        modal.show();
+
+        fetch('/ajax/expiring-contracts/')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('expiringContractsContent').innerHTML = html;
+            })
+            .catch(error => {
+                document.getElementById('expiringContractsContent').innerHTML = `
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Có lỗi xảy ra khi tải dữ liệu!
+                    </div>
+                </div>
+            `;
+                console.error('Error:', error);
+            });
+    }
+</script>
+{% endblock %}

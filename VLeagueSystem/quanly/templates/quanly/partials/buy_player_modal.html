@@ -1,0 +1,150 @@
+<!-- Modal Content for Buy Player - Rich UI -->
+<div class="row g-0">
+    <!-- LEFT COLUMN: Player Profile -->
+    <div class="col-md-5 bg-light border-end p-4">
+        <div class="text-center mb-4">
+            {% if player.avatar %}
+            <img src="{{ player.avatar.url }}" class="rounded-circle border border-3 border-primary mb-3"
+                style="width: 120px; height: 120px; object-fit: cover;" alt="{{ player.name }}">
+            {% else %}
+            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3"
+                style="width: 120px; height: 120px; font-size: 3rem;">
+                {{ player.name|slice:":1"|upper }}
+            </div>
+            {% endif %}
+            <h4 class="fw-bold text-primary mb-1">{{ player.name }}</h4>
+            <p class="text-muted mb-0">{{ player.get_position_display }}</p>
+            <span class="badge bg-secondary">{{ player.team.name }}</span>
+        </div>
+
+        <!-- Player Stats Grid -->
+        <div class="row g-2 mb-3">
+            <div class="col-6">
+                <div class="card bg-white border-0 shadow-sm text-center p-2">
+                    <small class="text-muted">Tuổi</small>
+                    <strong class="text-primary">{{ player_age|default:"N/A" }}</strong>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card bg-white border-0 shadow-sm text-center p-2">
+                    <small class="text-muted">Số áo</small>
+                    <strong class="text-primary">{{ player.jersey_number|default:"--" }}</strong>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card bg-white border-0 shadow-sm text-center p-2">
+                    <small class="text-muted">Chiều cao</small>
+                    <strong class="text-primary">{{ player.height|default:"--" }}cm</strong>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card bg-white border-0 shadow-sm text-center p-2">
+                    <small class="text-muted">Cân nặng</small>
+                    <strong class="text-primary">{{ player.weight|default:"--" }}kg</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Stats -->
+        <div class="card bg-white border-0 shadow-sm mb-3 p-3">
+            <h6 class="fw-bold text-muted mb-2"><i class="fas fa-chart-line me-1"></i>Thành tích</h6>
+            <ul class="list-unstyled mb-0 small">
+                <li class="d-flex justify-content-between mb-1">
+                    <span>⚽ Bàn thắng:</span>
+                    <strong>{{ total_goals|default:0 }}</strong>
+                </li>
+                <li class="d-flex justify-content-between mb-1">
+                    <span>🎯 Kiến tạo:</span>
+                    <strong>{{ total_assists|default:0 }}</strong>
+                </li>
+                <li class="d-flex justify-content-between mb-1">
+                    <span>🏃 Trận đấu:</span>
+                    <strong>{{ total_matches|default:0 }}</strong>
+                </li>
+                <li class="d-flex justify-content-between">
+                    <span>⭐ Trung bình:</span>
+                    <strong>{{ goals_per_match|floatformat:2|default:"0.00" }} bàn/trận</strong>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Contract Status -->
+        <div class="card bg-white border-0 shadow-sm p-3">
+            <h6 class="fw-bold text-muted mb-2"><i class="fas fa-file-contract me-1"></i>Hợp đồng</h6>
+            {% if current_contract %}
+            <p class="mb-1 small"><strong>Hết hạn:</strong> {{ current_contract.end_date|date:"d/m/Y" }}</p>
+            <p class="mb-1 small"><strong>Còn lại:</strong> {{ contract_remaining_months|floatformat:1 }} tháng</p>
+            {% if is_protected %}
+            <div class="alert alert-warning p-2 mb-0 small">
+                <i class="fas fa-shield-alt me-1"></i>Protected Period (FIFA Art. 17)
+            </div>
+            {% else %}
+            <div class="alert alert-success p-2 mb-0 small">
+                <i class="fas fa-check-circle me-1"></i>Ngoài giai đoạn bảo vệ
+            </div>
+            {% endif %}
+            {% else %}
+            <p class="text-muted small mb-0">Cầu thủ tự do</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Negotiation Form -->
+    <div class="col-md-7 p-4">
+        <h5 class="fw-bold mb-3"><i class="fas fa-handshake me-2 text-success"></i>Gửi Đề Nghị Chuyển Nhượng</h5>
+
+        <form id="buyPlayerForm" method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Cầu thủ mục tiêu</label>
+                <input type="text" class="form-control bg-light" value="{{ player.name }} - {{ player.team.name }}"
+                    readonly>
+            </div>
+
+            <div class="mb-3">
+                <label for="transfer_fee" class="form-label fw-bold">
+                    Mức giá đề nghị <span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text">💰</span>
+                    <input type="number" class="form-control" id="transfer_fee" name="transfer_fee"
+                        placeholder="Nhập số tiền (VND)" min="0" step="1000000" required>
+                    <span class="input-group-text">VND</span>
+                </div>
+                <small class="text-muted">Gợi ý: Từ 1 - 50 tỷ VND tùy theo vị trí và phong độ</small>
+            </div>
+
+            <div class="mb-3">
+                <label for="notes" class="form-label fw-bold">Ghi chú (Tùy chọn)</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3"
+                    placeholder="VD: Chúng tôi rất quan tâm đến cầu thủ này và hy vọng có thể đàm phán..."></textarea>
+            </div>
+
+            <div class="alert alert-info small">
+                <i class="fas fa-info-circle me-1"></i>
+                Đề nghị sẽ được gửi đến CLB hiện tại. Họ có quyền chấp nhận hoặc từ chối.
+                Nếu được chấp nhận, Admin sẽ duyệt cuối cùng.
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Hủy
+                </button>
+                <button type="submit" class="btn btn-success px-4">
+                    <i class="fas fa-paper-plane me-1"></i>Gửi Đề Nghị
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .card {
+        transition: transform 0.2s;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+    }
+</style>

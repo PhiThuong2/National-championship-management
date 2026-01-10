@@ -1,0 +1,177 @@
+{% extends base_template %}
+{% load static %}
+
+{% block content %}
+<style>
+    .round-card {
+        transition: all 0.3s;
+        border-left: 4px solid #6c757d;
+    }
+
+    .round-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .round-card.excellent {
+        border-left-color: #28a745;
+    }
+
+    .round-card.good {
+        border-left-color: #17a2b8;
+    }
+
+    .round-card.average {
+        border-left-color: #ffc107;
+    }
+
+    .round-card.poor {
+        border-left-color: #dc3545;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fw-bold mb-1">
+                        <i class="fas fa-chart-bar text-success me-2"></i>
+                        AI Prediction Accuracy Dashboard
+                    </h2>
+                    <p class="text-muted mb-0">
+                        {% if season %}{{ season.name }}{% else %}Tất cả mùa giải{% endif %}
+                    </p>
+                </div>
+                <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Quay lại
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card text-white bg-primary shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-uppercase mb-2">Tổng Dự Đoán</h6>
+                    <h2 class="fw-bold mb-0">{{ overall_total }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card text-white bg-success shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-uppercase mb-2">Dự Đoán Đúng</h6>
+                    <h2 class="fw-bold mb-0">{{ overall_correct }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card text-white shadow-sm"
+                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body">
+                    <h6 class="text-uppercase mb-2">Độ Chính Xác</h6>
+                    <h2 class="fw-bold mb-0">{{ overall_accuracy|floatformat:1 }}%</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accuracy by Round -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-list-ol me-2"></i>
+                        Độ Chính Xác Theo Từng Vòng Đấu
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if round_stats %}
+                    <div class="row">
+                        {% for stat in round_stats %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card round-card 
+                                {% if stat.accuracy >= 70 %}excellent
+                                {% elif stat.accuracy >= 50 %}good
+                                {% elif stat.accuracy >= 30 %}average
+                                {% else %}poor{% endif %}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0 fw-bold">Vòng {{ stat.round }}</h6>
+                                        <span class="badge 
+                                            {% if stat.accuracy >= 70 %}bg-success
+                                            {% elif stat.accuracy >= 50 %}bg-info
+                                            {% elif stat.accuracy >= 30 %}bg-warning
+                                            {% else %}bg-danger{% endif %}">
+                                            {{ stat.accuracy|floatformat:1 }}%
+                                        </span>
+                                    </div>
+
+                                    <div class="progress mb-2" style="height: 12px;">
+                                        <div class="progress-bar 
+                                            {% if stat.accuracy >= 70 %}bg-success
+                                            {% elif stat.accuracy >= 50 %}bg-info
+                                            {% elif stat.accuracy >= 30 %}bg-warning
+                                            {% else %}bg-danger{% endif %}" style="width: {{ stat.accuracy }}%">
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between small text-muted">
+                                        <span>
+                                            <i class="fas fa-check-circle text-success me-1"></i>
+                                            {{ stat.correct }} đúng
+                                        </span>
+                                        <span>
+                                            <i class="fas fa-calendar-alt me-1"></i>
+                                            {{ stat.total }} trận
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Chưa có dữ liệu accuracy theo vòng</p>
+                        <p class="small text-muted">Dữ liệu sẽ được cập nhật sau khi các trận đấu kết thúc</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-body">
+                    <h6 class="text-info mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Chú thích độ chính xác
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-3 col-6 mb-2">
+                            <span class="badge bg-success me-2">≥70%</span> Xuất sắc
+                        </div>
+                        <div class="col-md-3 col-6 mb-2">
+                            <span class="badge bg-info me-2">50-69%</span> Tốt
+                        </div>
+                        <div class="col-md-3 col-6 mb-2">
+                            <span class="badge bg-warning me-2">30-49%</span> Trung bình
+                        </div>
+                        <div class="col-md-3 col-6 mb-2">
+                            <span class="badge bg-danger me-2">&lt;30%</span> Cần cải thiện
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

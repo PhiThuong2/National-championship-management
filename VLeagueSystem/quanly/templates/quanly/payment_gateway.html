@@ -1,0 +1,123 @@
+{% extends 'quanly/base_fan.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-lg payment-card">
+                <div class="card-header bg-gradient text-white text-center py-4"
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h4 class="mb-0 fw-bold"><i class="fas fa-wallet me-2"></i>Thanh Toán Vé</h4>
+                    <p class="mb-0 mt-2 small text-white-50">Hoàn tất giao dịch để nhận vé QR</p>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Ticket Summary -->
+                    <div class="bg-light p-3 rounded mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted small">Trận đấu:</span>
+                            <span class="fw-bold text-dark">{{ match.home_team.name }} vs {{match.away_team.name }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted small">Thời gian:</span>
+                            <span>{{ match.match_date|date:"H:i - d/m/Y" }}</span>
+                        </div>
+                        <hr class="my-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-muted">Đơn giá:</span>
+                            <span>100,000 VND</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-muted">Số lượng:</span>
+                            <span class="fw-bold">x {{ quantity }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-muted">Tổng cộng:</span>
+                            <span>{{ total_price|intcomma }} VND</span>
+                        </div>
+                        {% if points_used > 0 %}
+                        <div class="d-flex justify-content-between align-items-center mb-1 text-success">
+                            <span><i class="fas fa-gift me-1"></i>Giảm giá ({{ points_used }} điểm):</span>
+                            <span>-{{ discount|intcomma }} VND</span>
+                        </div>
+                        {% endif %}
+                        <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                            <span class="fw-bold h5 mb-0">Thành tiền:</span>
+                            <span class="fw-bold h5 text-primary mb-0">{{ final_price|intcomma }} VND</span>
+                        </div>
+                    </div>
+
+                    <!-- Payment Method Selection -->
+                    <h6 class="fw-bold text-muted mb-3">Chọn phương thức thanh toán:</h6>
+
+                    <ul class="nav nav-pills nav-fill mb-3" id="pills-tab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active border" id="pills-momo-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-momo" type="button" role="tab">
+                                <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-MoMo-Square.png"
+                                    alt="MoMo" height="30" class="me-1"> MoMo
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link border ms-2" id="pills-bank-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-bank" type="button" role="tab">
+                                <i class="fas fa-university me-1"></i> Ngân hàng
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content text-center mb-4" id="pills-tabContent">
+                        <!-- MoMo QR -->
+                        <div class="tab-pane fade show active" id="pills-momo" role="tabpanel">
+                            <div class="p-3 border rounded bg-white">
+                                <p class="mb-2 text-muted small">Quét mã để thanh toán qua MoMo</p>
+                                <!-- Fake QR MoMo -->
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=MoMoPayment_{{ final_price }}"
+                                    class="img-fluid rounded mb-2 shadow-sm" alt="MoMo QR">
+                                <p class="mb-0 fw-bold text-primary">{{ final_price|intcomma }} VND</p>
+                            </div>
+                        </div>
+                        <!-- Bank QR -->
+                        <div class="tab-pane fade" id="pills-bank" role="tabpanel">
+                            <div class="p-3 border rounded bg-white">
+                                <p class="mb-2 text-muted small">Chuyển khoản QR Techcombank</p>
+                                <!-- Fake QR Bank -->
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BankTransfer_{{ final_price }}"
+                                    class="img-fluid rounded mb-2 shadow-sm" alt="Bank QR">
+                                <p class="mb-0 fw-bold text-primary">STK: 19036578999011<br>Techcombank</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Confirm Form -->
+                    <form method="post" action="{% url 'process_payment' match.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="points_used" value="{{ points_used }}">
+                        <input type="hidden" name="quantity" value="{{ quantity }}">
+                        <input type="hidden" name="final_price" value="{{ final_price }}">
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg fw-bold shadow-sm hover-scale">
+                                <i class="fas fa-check-circle me-2"></i>Xác Nhận Đã Thanh Toán
+                            </button>
+                            <a href="{% url 'ticket_shop' %}" class="btn btn-outline-secondary text-center small">Hủy
+                                giao dịch</a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-scale {
+        transition: transform 0.2s;
+    }
+
+    .hover-scale:hover {
+        transform: scale(1.02);
+    }
+</style>
+{% endblock %}

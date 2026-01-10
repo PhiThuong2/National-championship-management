@@ -1,0 +1,73 @@
+{% extends 'quanly/base_admin.html' %}
+
+{% block title %}Kết Quả Kiểm Tra{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-4">
+        <h2><i class="fas fa-robot"></i> AI Tạo Lịch Thi Đấu</h2>
+        <p class="text-muted">Bước 1/3: Kết quả kiểm tra</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header {% if is_feasible %}bg-success{% else %}bg-danger{% endif %} text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-{% if is_feasible %}check-circle{% else %}times-circle{% endif %}"></i>
+                Kết Quả Kiểm Tra Tính Khả Thi
+            </h5>
+        </div>
+        <div class="card-body">
+            <h4>Mùa Giải: {{ season.name }}</h4>
+            <p>
+                <strong>Thời gian:</strong> {{ season.start_date }} → {{ season.end_date }}
+                <br>
+                <strong>Số đội tham dự:</strong> {{ teams.count }}
+            </p>
+
+            <div class="alert alert-{% if is_feasible %}success{% else %}danger{% endif %} mt-3">
+                <h5>
+                    {% if is_feasible %}
+                    <i class="fas fa-thumbs-up"></i> Khả Thi!
+                    {% else %}
+                    <i class="fas fa-exclamation-triangle"></i> Không Khả Thi
+                    {% endif %}
+                </h5>
+                <pre style="white-space: pre-wrap; font-family: inherit;">{{ message }}</pre>
+            </div>
+
+            {% if is_feasible %}
+            <div class="card mt-3">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-cog"></i> Cấu Hình Tạo Lịch</h6>
+                </div>
+                <div class="card-body">
+                    <ul>
+                        <li><strong>Khung giờ thi đấu:</strong>
+                            {% for time in config.valid_time_slots %}
+                            {{ time.0 }}:{% if time.1 < 10 %}0{% endif %}{{ time.1 }}{% if not forloop.last %}, {% endif
+                                %} {% endfor %} </li>
+                        <li><strong>Khoảng nghỉ tối thiểu:</strong> {{ config.min_rest_days }} ngày</li>
+                        <li><strong>Số lượt thi đấu:</strong> {{ config.legs }} (lượt đi + lượt về)</li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="mt-4">
+                {% if is_feasible %}
+                <a href="{% url 'ai_generate_schedule_proposal' %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-forward"></i> Tiếp Tục: Tạo Lịch AI
+                </a>
+                {% else %}
+                <a href="{% url 'ai_schedule_feasibility_check' %}" class="btn btn-warning btn-lg">
+                    <i class="fas fa-redo"></i> Chọn Lại Mùa Giải
+                </a>
+                {% endif %}
+                <a href="{% url 'manage_matches' %}" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-arrow-left"></i> Quay Lại
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

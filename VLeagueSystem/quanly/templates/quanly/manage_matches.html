@@ -1,0 +1,271 @@
+{% extends 'quanly/base_admin.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<style>
+    .date-header {
+        background-color: #343a40;
+        color: #fff;
+        padding: 10px 15px;
+        font-weight: bold;
+        border-radius: 5px;
+        margin-top: 25px;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .match-card {
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-left: 5px solid #0d6efd;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        transition: all 0.2s;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .match-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .team-name {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #333;
+        display: flex;
+        align-items: center;
+    }
+
+    .team-logo {
+        width: 35px;
+        height: 35px;
+        object-fit: contain;
+        margin-right: 10px;
+    }
+
+    .score-box {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #dc3545;
+        min-width: 30px;
+        text-align: center;
+    }
+
+    .match-meta {
+        text-align: center;
+        color: #666;
+        font-size: 0.9rem;
+        border-left: 1px solid #eee;
+        padding-left: 15px;
+    }
+</style>
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h4 mb-0 text-gray-800 fw-bold">📅 Quản Lý Lịch Thi Đấu</h2>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a href="{% url 'generate_schedule' %}" class="btn btn-warning fw-bold shadow-sm">
+                ⚡ Tạo Lịch Tự Động
+            </a>
+            <a href="{% url 'add_match' %}" class="btn btn-primary shadow-sm">+ Thêm Trận</a>
+        </div>
+    </div>
+
+    <div class="card shadow mb-3 border-left-success">
+        <div class="card-body py-2 d-flex align-items-center">
+            <form method="get" class="d-flex align-items-center w-100">
+                <label class="fw-bold me-3 mb-0 text-success text-nowrap">Đang xem mùa giải:</label>
+                <select name="season" class="form-select form-select-sm fw-bold border-success"
+                    onchange="this.form.submit()">
+                    {% for s in seasons %}
+                        <option value="{{ s.id }}" {% if active_season.id == s.id %}selected{% endif %}>
+                        {{ s.name }} {% if s.is_active %}(Đang đá){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <div class="card p-3 mb-4 bg-white border-0 shadow-sm">
+        <form method="get" class="row g-2 align-items-center">
+            <input type="hidden" name="season" value="{{ active_season.id }}">
+
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0">🔍</span>
+                    <input type="text" name="q" class="form-control border-start-0"
+                        placeholder="Tìm đội hoặc giờ (VD: 17:00)..." value="{{ query|default:'' }}">
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <select name="team_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- Tất cả Đội bóng --</option>
+                    {% for t in teams %}
+                        <option value="{{ t.id }}" {% if team_filter == t.id|stringformat:"s" %}selected{% endif %}>
+                        {{ t.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2 d-flex">
+                <a href="{% url 'manage_matches' %}?season={{ active_season.id }}"
+                    class="btn btn-secondary fw-bold w-100">
+                    <i class="fas fa-sync-alt me-1"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="container p-0">
+        {% for m in page_obj %}
+        {% ifchanged m.match_date.date %}
+        <div class="date-header">
+            <span>🗓️ Ngày thi đấu: {{ m.match_date|vi_date }}</span>
+
+            <span class="badge bg-light text-dark small">Vòng {{ m.round_number }}</span>
+        </div>
+        {% endifchanged %}
+
+        <div class="match-card">
+            <div class="row align-items-center">
+                <div class="col-4 text-end">
+                    <div class="team-name justify-content-end">
+                        {{ m.home_team.name }}
+                        {% if m.home_team.logo %}
+                        <img src="{{ m.home_team.logo.url }}" class="team-logo ms-2 me-0">
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="col-1 text-center">
+                    <div class="score-box">
+                        {% if m.status == 'FINISHED' %}
+                        {{ m.home_score }} - {{ m.away_score }}
+                        {% else %}
+                        <span class="text-muted fs-6">VS</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="col-4 text-start">
+                    <div class="team-name">
+                        {% if m.away_team.logo %}
+                        <img src="{{ m.away_team.logo.url }}" class="team-logo">
+                        {% endif %}
+                        {{ m.away_team.name }}
+                    </div>
+                </div>
+
+                <div class="col-3 match-meta">
+                    {% if m.status == 'FINISHED' %}
+                    <span class="badge bg-secondary">Đã kết thúc</span>
+                    <div class="small text-muted mt-1">{{ m.home_team.stadium }}</div>
+                    {% else %}
+                    <div class="text-primary fw-bold">{{ m.match_date|date:"H:i" }}</div>
+                    <div class="small text-muted">{{ m.home_team.stadium }}</div>
+                    <small class="text-muted">Sắp diễn ra</small>
+                    {% endif %}
+
+                    <div class="mt-2">
+                        <a href="{% url 'update_match_score' m.id %}?next={{ request.get_full_path|urlencode }}"
+                            class="btn btn-sm btn-success py-0">⚽</a>
+                        <a href="{% url 'edit_match' m.id %}?next={{ request.get_full_path|urlencode }}"
+                            class="btn btn-sm btn-outline-primary py-0">✏️</a>
+                        <a href="{% url 'delete_match' m.id %}" class="btn btn-sm btn-outline-danger py-0"
+                            onclick="return confirm('Xóa trận này?')">🗑️</a>
+                    </div>
+                </div>
+            </div>
+
+            {% with ai_pred=ai_predictions_map|get_item:m.id %}
+            {% if ai_pred %}
+            <div class="mt-3 pt-2 border-top dashed border-light">
+                <div class="d-flex align-items-center justify-content-center bg-light rounded py-2 px-3 mx-auto"
+                    style="max-width: 80%;">
+                    <div class="me-3 d-flex align-items-center">
+                        <i class="fas fa-robot text-primary me-2"></i>
+                        <span class="fw-bold text-dark small">AI DỰ ĐOÁN:</span>
+                    </div>
+
+                    <span class="badge bg-primary text-white me-3" style="font-size: 0.9rem;">
+                        {{ ai_pred.predicted_home_score }} - {{ ai_pred.predicted_away_score }}
+                    </span>
+
+                    <div class="progress flex-grow-1" style="height: 10px; max-width: 200px;">
+                        <div class="progress-bar bg-success" role="progressbar"
+                            style="width: {{ ai_pred.win_probability|mul:100|floatformat:0 }}%"
+                            title="Thắng: {{ ai_pred.win_probability|mul:100|floatformat:0 }}%"></div>
+                        <div class="progress-bar bg-warning" role="progressbar"
+                            style="width: {{ ai_pred.draw_probability|mul:100|floatformat:0 }}%"
+                            title="Hòa: {{ ai_pred.draw_probability|mul:100|floatformat:0 }}%"></div>
+                        <div class="progress-bar bg-danger" role="progressbar"
+                            style="width: {{ ai_pred.loss_probability|mul:100|floatformat:0 }}%"
+                            title="Thua: {{ ai_pred.loss_probability|mul:100|floatformat:0 }}%"></div>
+                    </div>
+
+                    <div class="ms-3 small text-muted">
+                        <span class="text-success fw-bold">{{ ai_pred.win_probability|mul:100|floatformat:0 }}%</span> /
+                        <span class="text-warning fw-bold">{{ ai_pred.draw_probability|mul:100|floatformat:0 }}%</span>
+                        /
+                        <span class="text-danger fw-bold">{{ ai_pred.loss_probability|mul:100|floatformat:0 }}%</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+        {% empty %}
+        <div class="text-center py-5 text-muted bg-white rounded shadow-sm">
+            <h4>📭 Chưa có trận đấu nào trong mùa giải: {{ active_season.name }}</h4>
+            <p>Bạn hãy tạo lịch thi đấu tự động hoặc thêm trận thủ công nhé.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="mt-4 d-flex justify-content-center">
+        <nav>
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?page=1&season={{ active_season.id }}&q={{ query }}&team_id={{ team_filter }}">« Đầu</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?page={{ page_obj.previous_page_number }}&season={{ active_season.id }}&q={{ query }}&team_id={{ team_filter }}">Trước</a>
+                </li>
+                {% endif %}
+                <li class="page-item disabled">
+                    <span class="page-link fw-bold text-dark">Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                </li>
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?page={{ page_obj.next_page_number }}&season={{ active_season.id }}&q={{ query }}&team_id={{ team_filter }}">Sau</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?page={{ page_obj.paginator.num_pages }}&season={{ active_season.id }}&q={{ query }}&team_id={{ team_filter }}">Cuối
+                        »</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

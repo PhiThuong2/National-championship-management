@@ -1,0 +1,84 @@
+{% extends 'quanly/base_admin.html' if user.role == 'admin' else 'quanly/base_club.html' if user.role == 'club_rep' else 'quanly/base_admin.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">⚙️ Cài đặt thông tin cá nhân</h2>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Thông tin tài khoản</h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.first_name.label }}</label>
+                            {{ form.first_name }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.email.label }}</label>
+                            {{ form.email }}
+                        </div>
+                        
+                        {% if form.avatar %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.avatar.label }}</label>
+                            {% if user.avatar %}
+                                <div class="mb-2">
+                                    <img src="{{ user.avatar.url }}" alt="Avatar" class="rounded-circle" width="100" height="100">
+                                </div>
+                            {% endif %}
+                            {{ form.avatar }}
+                            <small class="form-text text-muted">Chọn ảnh đại diện mới (nếu muốn thay đổi)</small>
+                        </div>
+                        {% endif %}
+                        
+                        <hr>
+                        <h6 class="mb-3">Đổi mật khẩu</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.new_password.label }}</label>
+                            {{ form.new_password }}
+                            <small class="form-text text-muted">{{ form.new_password.help_text }}</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.confirm_password.label }}</label>
+                            {{ form.confirm_password }}
+                        </div>
+                        
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                {% for field, errors in form.errors.items %}
+                                    {% for error in errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">💾 Lưu thay đổi</button>
+                            <a href="{% if user.role == 'admin' %}{% url 'admin_dashboard' %}{% elif user.role == 'club_rep' %}{% url 'club_dashboard' %}{% else %}{% url 'home' %}{% endif %}" class="btn btn-secondary">Hủy</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+

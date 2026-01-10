@@ -1,0 +1,264 @@
+{% extends base_template %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* CSS RIÊNG CHO TRANG BXH CÁ NHÂN */
+    .ranking-column {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        min-height: 500px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e9ecef;
+    }
+
+    .top-entry {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 20px 15px;
+        /* Giảm padding để tiết kiệm diện tích */
+        margin-bottom: 20px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3);
+        overflow: hidden;
+        /* Ẩn phần tràn ra ngoài */
+    }
+
+    /* --- SỬA LỖI CHỮ TO BỊ TRÀN --- */
+    .top-entry .player-name {
+        font-size: 1.1rem;
+        /* Giảm từ 1.4rem xuống 1.1rem */
+        font-weight: 800;
+        margin: 5px 0;
+        text-transform: uppercase;
+
+        /* Tự động cắt chữ nếu quá dài (VD: NGUYỄN VĂN...) */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+    }
+
+    .top-entry .stat-value {
+        font-size: 2.5rem;
+        /* Giảm từ 3rem xuống 2.5rem */
+        font-weight: 900;
+        line-height: 1;
+        margin: 5px 0;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .top-entry .team-name {
+        font-size: 0.85rem;
+        opacity: 0.9;
+        font-weight: 500;
+        /* Cũng cắt chữ nếu tên đội quá dài */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* ------------------------------ */
+
+    .ranking-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .ranking-list li {
+        background: #f8f9fa;
+        border-left: 5px solid #667eea;
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: transform 0.2s;
+    }
+
+    .ranking-list li:hover {
+        transform: translateX(5px);
+        background: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .ranking-list li .rank {
+        font-weight: 900;
+        color: #667eea;
+        margin-right: 10px;
+        font-size: 1rem;
+        min-width: 20px;
+    }
+
+    .ranking-list li .player-info {
+        flex-grow: 1;
+        line-height: 1.2;
+        overflow: hidden;
+        /* Ngăn vỡ layout */
+    }
+
+    .ranking-list li .player-info .name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+        max-width: 140px;
+        /* Giới hạn chiều rộng tên */
+    }
+
+    .ranking-list li .stat-value {
+        font-weight: 800;
+        color: #dc3545;
+        font-size: 1.1rem;
+        margin-left: 10px;
+    }
+
+    .column-title {
+        font-size: 1rem;
+        font-weight: 800;
+        text-align: center;
+        margin-bottom: 20px;
+        padding: 10px;
+        background: #343a40;
+        color: white;
+        border-radius: 8px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+</style>
+
+<div class="container-fluid">
+    <h2 class="mb-4 fw-bold text-uppercase border-bottom pb-2">
+        <i class="fas fa-trophy text-warning me-2"></i>Bảng Xếp Hạng Cá Nhân
+    </h2>
+
+    {% if active_season %}
+    <p class="text-muted mb-4">Dữ liệu thống kê mùa giải: <strong>{{ active_season.name }}</strong></p>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-xl-3 col-md-6">
+            <div class="ranking-column">
+                <div class="column-title bg-danger">⚽ Vua Phá Lưới</div>
+
+                {% if top_scorers %}
+                <div class="top-entry" style="background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);">
+                    <div class="small text-uppercase opacity-75">Dẫn đầu</div>
+                    <div class="player-name" title="{{ top_scorers.0.player.name }}">{{ top_scorers.0.player.name }}
+                    </div>
+                    <div class="stat-value">{{ top_scorers.0.goals }}</div>
+                    <div class="team-name">{{ top_scorers.0.player.team.name|default:"Tự do" }}</div>
+                </div>
+                <ul class="ranking-list">
+                    {% for stat in top_scorers|slice:"1:" %}
+                    <li style="border-left-color: #ff4b2b;">
+                        <span class="rank" style="color: #ff4b2b;">{{ forloop.counter|add:1 }}</span>
+                        <div class="player-info">
+                            <div class="fw-bold text-dark name">{{ stat.player.name }}</div>
+                            <small class="text-muted">{{ stat.player.team.name|default:"Tự do" }}</small>
+                        </div>
+                        <span class="stat-value text-danger">{{ stat.goals }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-center text-muted mt-5">Chưa có dữ liệu</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="ranking-column">
+                <div class="column-title bg-primary">🎯 Vua Kiến Tạo</div>
+
+                {% if top_assists %}
+                <div class="top-entry" style="background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);">
+                    <div class="small text-uppercase opacity-75">Dẫn đầu</div>
+                    <div class="player-name" title="{{ top_assists.0.player.name }}">{{ top_assists.0.player.name }}
+                    </div>
+                    <div class="stat-value">{{ top_assists.0.assists }}</div>
+                    <div class="team-name">{{ top_assists.0.player.team.name|default:"Tự do" }}</div>
+                </div>
+                <ul class="ranking-list">
+                    {% for stat in top_assists|slice:"1:" %}
+                    <li style="border-left-color: #00b09b;">
+                        <span class="rank" style="color: #00b09b;">{{ forloop.counter|add:1 }}</span>
+                        <div class="player-info">
+                            <div class="fw-bold text-dark name">{{ stat.player.name }}</div>
+                            <small class="text-muted">{{ stat.player.team.name|default:"Tự do" }}</small>
+                        </div>
+                        <span class="stat-value text-success">{{ stat.assists }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-center text-muted mt-5">Chưa có dữ liệu</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="ranking-column">
+                <div class="column-title bg-info text-dark">🛡️ VUA ĐÁNH CHẶN</div>
+
+                {% if top_interceptions %}
+                <div class="top-entry" style="background: linear-gradient(135deg, #1fa2ff 0%, #12d8fa 100%);">
+                    <div class="small text-uppercase opacity-75">Dẫn đầu</div>
+                    <div class="player-name" title="{{ top_interceptions.0.player.name }}">
+                        {{top_interceptions.0.player.name }}</div>
+                    <div class="stat-value">{{ top_interceptions.0.count }}</div>
+                    <div class="team-name">{{ top_interceptions.0.player.team.name|default:"Tự do" }}</div>
+                </div>
+                <ul class="ranking-list">
+                    {% for item in top_interceptions|slice:"1:" %}
+                    <li style="border-left-color: #1fa2ff;">
+                        <span class="rank" style="color: #1fa2ff;">{{ forloop.counter|add:1 }}</span>
+                        <div class="player-info">
+                            <div class="fw-bold text-dark name">{{ item.player.name }}</div>
+                            <small class="text-muted">{{ item.player.team.name|default:"Tự do" }}</small>
+                        </div>
+                        <span class="stat-value text-primary">{{ item.count }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-center text-muted mt-5">Chưa có dữ liệu</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="ranking-column">
+                <div class="column-title bg-warning text-dark">🧤 Găng Tay Vàng</div>
+
+                {% if top_saves %}
+                <div class="top-entry" style="background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);">
+                    <div class="small text-uppercase opacity-75">Cứu thua nhiều nhất</div>
+                    <div class="player-name" title="{{ top_saves.0.player.name }}">{{ top_saves.0.player.name }}</div>
+                    <div class="stat-value">{{ top_saves.0.saves }}</div>
+                    <div class="team-name">{{ top_saves.0.player.team.name|default:"Tự do" }}</div>
+                </div>
+                <ul class="ranking-list">
+                    {% for item in top_saves|slice:"1:" %}
+                    <li style="border-left-color: #f7971e;">
+                        <span class="rank" style="color: #f7971e;">{{ forloop.counter|add:1 }}</span>
+                        <div class="player-info">
+                            <div class="fw-bold text-dark name">{{ item.player.name }}</div>
+                            <small class="text-muted">{{ item.player.team.name|default:"Tự do" }}</small>
+                        </div>
+                        <span class="stat-value text-dark">{{ item.saves }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-center text-muted mt-5">Chưa có dữ liệu cứu thua</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

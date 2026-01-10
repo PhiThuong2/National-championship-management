@@ -1,0 +1,496 @@
+{% extends 'quanly/base_club.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-11">
+        <div class="card shadow-lg border-0 rounded-4">
+            <div class="card-header bg-gradient bg-primary text-white py-3 rounded-top-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="fas fa-file-contract me-2"></i> Quản Lý Hợp Đồng</h4>
+                    <button class="btn btn-warning btn-lg fw-bold shadow-sm" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#contractFormCollapse" aria-expanded="false">
+                        <i class="fas fa-plus-circle me-2"></i>Tạo Hợp Đồng Mới
+                    </button>
+                </div>
+            </div>
+
+            <!-- Collapsible Form Container -->
+            <div class="collapse" id="contractFormCollapse">
+
+                <div class="card-body p-4">
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <!-- Hướng dẫn sử dụng -->
+                    <div class="alert alert-info border-start border-4 border-info mb-4">
+                        <h6 class="fw-bold mb-2"><i class="fas fa-info-circle me-2"></i>Quy trình sử dụng AI:</h6>
+                        <ol class="mb-0 small">
+                            <li>Điền đầy đủ thông tin: Cầu thủ, loại hợp đồng, thời hạn</li>
+                            <li>Bấm <strong>"🤖 AI Gợi ý"</strong> để AI phân tích và đề xuất lương + điều khoản</li>
+                            <li>Đọc kỹ nội dung AI gợi ý, chỉnh sửa nếu cần</li>
+                            <li>Bấm <strong>"💾 KÝ HỢP ĐỒNG"</strong> để lưu chính thức</li>
+                        </ol>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <!-- PANEL TRÁI: THÔNG TIN ĐẦU VÀO -->
+                            <div class="col-md-4 border-end bg-light p-4 rounded-start-4">
+                                <h5 class="text-primary mb-3 fw-bold">
+                                    <i class="fas fa-clipboard-list me-2"></i>1. Thông tin đầu vào
+                                </h5>
+
+                                <div class="mb-3">
+                                    <label class="fw-bold mb-2">
+                                        <i class="fas fa-user-tie text-primary me-1"></i>Chọn Cầu thủ
+                                    </label>
+                                    {{ form.player }}
+                                    <script>document.getElementsByName("player")[0].classList.add("form-select");</script>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="fw-bold mb-2">
+                                        <i class="fas fa-file-alt text-success me-1"></i>Loại Hợp đồng
+                                    </label>
+                                    {{ form.contract_type }}
+                                    <script>document.getElementsByName("contract_type")[0].classList.add("form-select");</script>
+                                    <small class="text-muted">* AI sẽ điều chỉnh lương theo loại hợp đồng</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="fw-bold mb-2">
+                                        <i class="fas fa-info-circle text-warning me-1"></i>Trạng thái hợp đồng
+                                    </label>
+                                    {{ form.status }}
+                                    <script>document.getElementsByName("status")[0].classList.add("form-select");</script>
+                                    <small class="text-muted">* Người dùng có thể cập nhật trạng thái</small>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-6 mb-3">
+                                        <label class="fw-bold mb-2">
+                                            <i class="fas fa-calendar-day text-info me-1"></i>Từ ngày
+                                        </label>
+                                        {{ form.start_date }}
+                                        <script>document.getElementsByName("start_date")[0].classList.add("form-control");</script>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <label class="fw-bold mb-2">
+                                            <i class="fas fa-calendar-times text-danger me-1"></i>Đến ngày
+                                        </label>
+                                        {{ form.end_date }}
+                                        <script>document.getElementsByName("end_date")[0].classList.add("form-control");</script>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid mt-4">
+                                    <button type="button" onclick="fetchAISuggestion()"
+                                        class="btn btn-warning btn-lg fw-bold shadow-sm">
+                                        <i class="fas fa-robot me-2"></i> AI Gợi ý Lương & Điều khoản
+                                    </button>
+                                    <small class="text-muted text-center mt-2">AI sẽ kiểm tra tuân thủ FIFA & Luật
+                                        VN</small>
+                                </div>
+                            </div>
+
+                            <!-- PANEL PHẢI: KẾT QUẢ AI -->
+                            <div class="col-md-8 p-4">
+                                <h5 class="text-success mb-3 fw-bold">
+                                    <i class="fas fa-file-signature me-2"></i>2. Chi tiết Hợp đồng
+                                    <small class="text-muted fw-normal">(AI tự động điền)</small>
+                                </h5>
+
+                                <div class="mb-4">
+                                    <label class="fw-bold mb-2">
+                                        <i class="fas fa-money-bill-wave text-success me-1"></i>Mức lương (VND/tháng)
+                                    </label>
+                                    {{ form.salary }}
+                                    <script>
+                                        document.getElementsByName("salary")[0].classList.add("form-control", "form-control-lg", "text-danger", "fw-bold", "fs-4");
+                                    </script>
+                                    <small class="text-muted">AI sẽ đề xuất mức lương dựa trên: vị trí, kinh nghiệm,
+                                        phong
+                                        độ</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="fw-bold mb-2">
+                                        <i class="fas fa-scroll text-primary me-1"></i>Điều khoản chi tiết hợp đồng
+                                        <span class="badge bg-info-subtle text-info ms-2">Tuân thủ FIFA RSTP</span>
+                                    </label>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="exportToPDF()"
+                                        id="pdfExportBtn">
+                                        <i class="fas fa-file-pdf me-1"></i>Xuất PDF
+                                    </button>
+                                </div>
+                                {{ form.clauses }}
+                                <script>
+                                    document.getElementsByName("clauses")[0].classList.add("form-control", "font-monospace");
+                                    document.getElementsByName("clauses")[0].style.minHeight = "400px";
+                                </script>
+                                <small class="text-muted">
+                                    AI sẽ soạn 7 điều khoản chuẩn: Thông tin bên, Trách nhiệm, Lương thưởng,
+                                    Chấm dứt HĐ, Giải quyết tranh chấp...
+                                </small>
+                            </div>
+                        </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'club_dashboard' %}" class="btn btn-outline-secondary px-4">
+                        <i class="fas fa-times me-2"></i>Hủy bỏ
+                    </a>
+                    <button type="submit" name="action" value="save" class="btn btn-success btn-lg px-5 fw-bold shadow">
+                        <i class="fas fa-save me-2"></i>💾 KÝ HỢP ĐỒNG CHÍNH THỨC
+                    </button>
+                </div>
+                </form>
+            </div>
+            <!-- End Collapsible Form -->
+
+            <!-- Contract List Section -->
+            <div class="card-body p-4 bg-light">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold text-primary mb-0">
+                        <i class="fas fa-list-alt me-2"></i>Danh Sách Hợp Đồng Đã Ký
+                    </h5>
+                    <span class="badge bg-primary">{{ contracts.count }} hợp đồng</span>
+                </div>
+
+                {% if contracts %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-primary">
+                            <tr>
+                                <th style="width: 10%;">Ảnh</th>
+                                <th style="width: 20%;">Cầu thủ</th>
+                                <th style="width: 15%;">Loại HĐ</th>
+                                <th style="width: 15%;">Lương (VND)</th>
+                                <th style="width: 20%;">Thời hạn</th>
+                                <th style="width: 15%;">Trạng thái</th>
+                                <th style="width: 5%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contract in contracts %}
+                            <tr>
+                                <td>
+                                    {% if contract.player.avatar %}
+                                    <img src="{{ contract.player.avatar.url }}" alt="{{ contract.player.name }}"
+                                        class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center"
+                                        style="width: 50px; height: 50px;">
+                                        <i class="fas fa-user text-white"></i>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ contract.player.name }}</div>
+                                    <small class="text-muted">{{ contract.player.get_position_display }}</small>
+                                </td>
+                                <td>
+                                    {% if contract.contract_type == 'Permanent' %}
+                                    <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Mua
+                                        đứt</span>
+                                    {% else %}
+                                    <span class="badge bg-info"><i class="fas fa-handshake me-1"></i>Cho mượn</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-success">{{contract.salary|floatformat:0|intcomma}}</span>
+                                </td>
+                                <td>
+                                    <div><i
+                                            class="fas fa-calendar-check text-success me-1"></i>{{contract.start_date|date:"d/m/Y"}}
+                                    </div>
+                                    <div><i
+                                            class="fas fa-calendar-times text-danger me-1"></i>{{contract.end_date|date:"d/m/Y"}}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if contract.status == 'Active' %}
+                                    <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Đang hiệu
+                                        lực</span>
+                                    {% elif contract.status == 'Pending' %}
+                                    <span class="badge bg-warning"><i class="fas fa-clock me-1"></i>Chờ hiệu lực</span>
+                                    {% elif contract.status == 'Expired' %}
+                                    <span class="badge bg-secondary"><i class="fas fa-times-circle me-1"></i>Hết
+                                        hạn</span>
+                                    {% else %}
+                                    <span class="badge bg-danger"><i class="fas fa-ban me-1"></i>Chấm dứt</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'club_player_detail' contract.player.id %}"
+                                        class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle me-2"></i>Chưa có hợp đồng nào. Hãy tạo hợp đồng mới ở trên!
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="aiLoadingOverlay"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+    <div class="text-center text-white">
+        <div class="spinner-border text-warning mb-3" role="status" style="width: 4rem; height: 4rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h4 class="fw-bold"><i class="fas fa-robot me-2"></i>Đang kết nối với AI...</h4>
+        <p class="text-warning">Vui lòng chờ trong giây lát. AI đang phân tích và tạo hợp đồng cho bạn.</p>
+        <div class="spinner-grow text-warning me-2" role="status" style="width: 1rem; height: 1rem;"></div>
+        <div class="spinner-grow text-warning me-2" role="status" style="width: 1rem; height: 1rem;"></div>
+        <div class="spinner-grow text-warning" role="status" style="width: 1rem; height: 1rem;"></div>
+    </div>
+</div>
+
+<style>
+    .font-monospace {
+        font-family: 'Courier New', monospace;
+        line-height: 1.6;
+    }
+
+    .bg-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+</style>
+
+<!-- html2pdf Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<!-- Official Contract Template (Hidden) -->
+<div id="contractTemplate" style="display: none;">
+    <div style="font-family: 'Times New Roman', serif; padding: 40px; line-height: 1.5; color: #000;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <p style="font-weight: bold; margin: 0; text-transform: uppercase;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</p>
+            <p style="font-weight: bold; margin: 0; text-decoration: underline;">Độc lập - Tự do - Hạnh phúc</p>
+            <br>
+            <h2 style="font-weight: bold; margin: 20px 0 10px 0;">HỢP ĐỒNG LAO ĐỘNG BÓNG ĐÁ CHUYÊN NGHIỆP</h2>
+            <p style="font-style: italic;">(Số: ......./HĐLĐ-BĐ)</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <p>Hôm nay, ngày <span id="pdf_day">...</span> tháng <span id="pdf_month">...</span> năm <span
+                    id="pdf_year">...</span>, tại văn phòng CLB <span id="pdf_club_name">[Club Name]</span>.</p>
+            <p>Chúng tôi gồm:</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <p style="font-weight: bold; text-transform: uppercase;">BÊN A: CÂU LẠC BỘ BÓNG ĐÁ <span
+                    id="pdf_club_name_2">[Club Name]</span></p>
+            <p>Đại diện: _______________________________ Chức vụ: ___________________</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <p style="font-weight: bold; text-transform: uppercase;">BÊN B: CẦU THỦ <span id="pdf_player_name">[Tên Cầu
+                    Thủ]</span></p>
+            <p>Sinh ngày: .../.../...... &nbsp;&nbsp;&nbsp;&nbsp; Quốc tịch: <span id="pdf_nationality">...</span></p>
+            <p>Số áo: <span id="pdf_jersey">...</span> &nbsp;&nbsp;&nbsp;&nbsp; Vị trí: <span
+                    id="pdf_position">...</span></p>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <p>Sau khi thỏa thuận, hai bên đồng ý ký kết hợp đồng lao động với các điều khoản như sau:</p>
+            <div id="pdf_clauses_content" style="white-space: pre-wrap; text-align: justify; margin-top: 10px;">
+                <!-- Clauses will be inserted here -->
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 50px;">
+            <div style="text-align: center; width: 45%;">
+                <p style="font-weight: bold;">ĐẠI DIỆN BÊN B</p>
+                <p style="font-style: italic;">(Ký, ghi rõ họ tên)</p>
+                <br><br><br><br>
+                <p style="font-weight: bold;" id="pdf_signer_b">[Tên Cầu Thủ]</p>
+            </div>
+            <div style="text-align: center; width: 45%;">
+                <p style="font-weight: bold;">ĐẠI DIỆN BÊN A</p>
+                <p style="font-style: italic;">(Ký, đóng dấu)</p>
+                <br><br><br><br>
+                <p style="font-weight: bold;">CHỦ TỊCH CLB</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Trigger AI Suggestion via AJAX
+    function fetchAISuggestion() {
+        const player = document.getElementsByName("player")[0].value;
+        const contract_type = document.getElementsByName("contract_type")[0].value;
+        const status = document.getElementsByName("status")[0].value;
+        const start_date = document.getElementsByName("start_date")[0].value;
+        const end_date = document.getElementsByName("end_date")[0].value;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        if (!player) {
+            alert("Vui lòng chọn cầu thủ!");
+            return;
+        }
+
+        // Show Loading
+        document.getElementById('aiLoadingOverlay').style.display = 'flex';
+
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('action', 'ask_ai');
+        formData.append('player', player);
+        formData.append('contract_type', contract_type);
+        formData.append('status', status);
+        formData.append('start_date', start_date);
+        formData.append('end_date', end_date);
+        formData.append('csrfmiddlewaretoken', csrfToken);
+
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                // Hide Loading
+                document.getElementById('aiLoadingOverlay').style.display = 'none';
+
+                if (data.success) {
+                    // Update inputs
+                    document.getElementsByName("salary")[0].value = data.salary;
+                    document.getElementsByName("clauses")[0].value = data.clauses;
+
+                    // Show success message
+                    const msgContainer = document.querySelector('.card-body .alert-dismissible')?.parentElement || document.querySelector('.card-body');
+
+                    // Construct alert HTML
+                    const alertHtml = `
+                    <div class="alert alert-${data.message_tag} alert-dismissible fade show shadow-sm" role="alert">
+                        ${data.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+
+                    // Remove old alerts
+                    document.querySelectorAll('.alert-dismissible').forEach(el => el.remove());
+
+                    // Insert new alert
+                    msgContainer.insertAdjacentHTML('afterbegin', alertHtml);
+
+                    // Scroll to top to see message
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                } else {
+                    alert(data.error || "Có lỗi xảy ra khi gọi AI.");
+                }
+            })
+            .catch(error => {
+                document.getElementById('aiLoadingOverlay').style.display = 'none';
+                console.error('Error:', error);
+                alert("Lỗi kết nối. Vui lòng thử lại.");
+            });
+    }
+
+    // Export clauses to PDF using html2pdf
+    function exportToPDF() {
+        const clausesText = document.getElementsByName('clauses')[0].value;
+        const playerSelect = document.getElementsByName('player')[0];
+        const playerName = playerSelect.options[playerSelect.selectedIndex]?.text || 'CauThu';
+        const clubName = "{{ request.user.team.name }}"; // Get club name from template context
+
+        if (!clausesText || clausesText.trim() === '') {
+            alert('Không có nội dung điều khoản để xuất. Vui lòng sử dụng AI tạo điều khoản trước.');
+            return;
+        }
+
+        // Show loading state on button
+        const btn = document.getElementById('pdfExportBtn');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang xuất...';
+        btn.disabled = true;
+
+        try {
+            // Populate template
+            const today = new Date();
+            document.getElementById('pdf_day').textContent = today.getDate();
+            document.getElementById('pdf_month').textContent = today.getMonth() + 1;
+            document.getElementById('pdf_year').textContent = today.getFullYear();
+
+            document.getElementById('pdf_club_name').textContent = clubName;
+            document.getElementById('pdf_club_name_2').textContent = clubName;
+
+            document.getElementById('pdf_player_name').textContent = playerName.split(' - ')[0] || playerName;
+            document.getElementById('pdf_signer_b').textContent = playerName.split(' - ')[0] || playerName;
+
+            // Format clauses content
+            document.getElementById('pdf_clauses_content').textContent = clausesText;
+
+            // Generate PDF
+            const element = document.getElementById('contractTemplate');
+
+            // html2pdf requires the element to be visible for correct rendering usually, 
+            // but we can try rendering it from the hidden state or clone it.
+            // Let's try making it block temporarily.
+            element.style.display = 'block';
+
+            const opt = {
+                margin: 15,
+                filename: `HopDong_${playerName.replace(/\s+/g, '_')}_${today.getTime()}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(function () {
+                element.style.display = 'none'; // Hide again
+
+                // Reset button
+                btn.innerHTML = '<i class="fas fa-check me-1"></i>Đã xuất!';
+                btn.classList.remove('btn-outline-danger');
+                btn.classList.add('btn-success');
+                btn.disabled = false;
+
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-outline-danger');
+                }, 2000);
+            }).catch(function (error) {
+                console.error('PDF Generation Error:', error);
+                element.style.display = 'none';
+                alert('Lỗi tạo PDF. Vui lòng thử lại.');
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            });
+
+        } catch (error) {
+            console.error('PDF Export Logic Error:', error);
+            alert('Có lỗi khi xuất PDF.');
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+            document.getElementById('contractTemplate').style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

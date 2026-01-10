@@ -1,0 +1,124 @@
+{% extends 'quanly/base_admin.html' %}
+
+{% block title %}Xem Trước Lịch AI{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="mb-4">
+        <h2><i class="fas fa-robot"></i> AI Tạo Lịch Thi Đấu</h2>
+        <p class="text-muted">Bước 3/3: Xem trước và xác nhận</p>
+    </div>
+
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle"></i> {{ gen_message }}
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3>{{ stats.total_matches }}</h3>
+                    <p class="mb-0">Tổng Số Trận</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3>{{ stats.total_rounds }}</h3>
+                    <p class="mb-0">Tổng Số Vòng</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h3>{{ stats.matches_per_round }}</h3>
+                    <p class="mb-0">Trận/Vòng</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="card">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Xem Trước Lịch Thi Đấu</h5>
+        </div>
+        <div class="card-body">
+            <div class="accordion" id="accordionRounds">
+                {% for round_num, matches in rounds.items %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ round_num }}">
+                        <button class="accordion-button {% if round_num > 3 %}collapsed{% endif %}" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapse{{ round_num }}">
+                            <strong>Vòng {{ round_num }}</strong>
+                            <span class="badge bg-secondary ms-2">{{ matches|length }} trận</span>
+                        </button>
+                    </h2>
+                    <div id="collapse{{ round_num }}"
+                        class="accordion-collapse collapse {% if round_num <= 3 %}show{% endif %}"
+                        data-bs-parent="#accordionRounds">
+                        <div class="accordion-body">
+                            <table class="table table-sm table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Ngày Giờ</th>
+                                        <th>Đội Nhà</th>
+                                        <th></th>
+                                        <th>Đội Khách</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for match in matches %}
+                                    <tr>
+                                        <td><small>{{ match.match_date|date:"d/m/Y H:i" }}</small></td>
+                                        <td>{{ match.home_team.name }}</td>
+                                        <td class="text-center"><strong>vs</strong></td>
+                                        <td>{{ match.away_team.name }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="card mt-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Xác Nhận Lưu Lịch</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{% url 'approve_ai_schedule_proposal' %}">
+                {% csrf_token %}
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="clear_existing" id="clearExisting">
+                    <label class="form-check-label" for="clearExisting">
+                        <strong class="text-danger">Xóa tất cả trận đấu cũ của mùa giải này</strong>
+                        <br><small class="text-muted">Cảnh báo: Thao tác này không thể hoàn tác!</small>
+                    </label>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="fas fa-check"></i> Xác Nhận và Lưu Vào Database
+                    </button>
+                    <a href="{% url 'reject_ai_schedule_proposal' %}" class="btn btn-danger btn-lg">
+                        <i class="fas fa-times"></i> Từ Chối và Tạo Lại
+                    </a>
+                    <a href="{% url 'manage_matches' %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-arrow-left"></i> Quay Lại
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

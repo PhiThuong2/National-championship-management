@@ -1,0 +1,394 @@
+{% load static %}
+
+<!-- Chat Widget Bubble (Fixed bottom-right) -->
+<div id="chatWidget" class="chat-widget">
+    <!-- Chat Button -->
+    <button id="chatToggle" class="chat-toggle-btn">
+        <i class="fas fa-robot fs-3"></i>
+        <span class="badge bg-danger chat-badge" id="chatBadge" style="display: none;">1</span>
+    </button>
+
+    <!-- Chat Window -->
+    <div id="chatWindow" class="chat-window" style="display: none;">
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="d-flex align-items-center">
+                <div class="chat-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="ms-2">
+                    <h6 class="mb-0 fw-bold">Trợ lý V-League</h6>
+                    <small class="text-white-50"><i class="fas fa-circle text-success" style="font-size: 0.5rem;"></i>
+                        Trực tuyến</small>
+                </div>
+            </div>
+            <button id="chatClose" class="btn-close btn-close-white"></button>
+        </div>
+
+        <!-- Messages Container -->
+        <div id="chatMessages" class="chat-messages">
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-comment-dots fs-2 mb-2 text-primary"></i>
+                <p class="mb-1"><strong>Xin chào!</strong></p>
+                <p class="small">Tôi có thể giúp gì cho bạn về V-League?</p>
+            </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div id="typingIndicator" class="typing-indicator" style="display: none;">
+            <div class="typing-bubble">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+
+        <!-- Input -->
+        <div class="chat-input">
+            <form id="chatForm" class="d-flex gap-2">
+                <input type="text" id="chatInput" class="form-control" placeholder="Nhập câu hỏi..." autocomplete="off">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .chat-widget {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 2147483647;
+        /* Max Z-Index để luôn nổi lên trên */
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+        line-height: 1.5;
+    }
+
+    .chat-toggle-btn {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .chat-toggle-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .chat-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        min-width: 20px;
+        height: 20px;
+        border-radius: 10px;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .chat-window {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        width: 380px;
+        height: 550px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .chat-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .chat-avatar {
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        background: #f8f9fa;
+    }
+
+    .chat-messages::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 10px;
+    }
+
+    .chat-message {
+        margin-bottom: 15px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .message-bubble {
+        padding: 10px 14px;
+        border-radius: 18px;
+        max-width: 85%;
+        word-wrap: break-word;
+        line-height: 1.4;
+    }
+
+    .user-message .message-bubble {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        margin-left: auto;
+        border-bottom-right-radius: 4px;
+    }
+
+    .ai-message .message-bubble {
+        background: white;
+        color: #333;
+        border: 1px solid #e9ecef;
+        border-bottom-left-radius: 4px;
+    }
+
+    .user-message {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .ai-message {
+        display: flex;
+        justify-content: flex-start;
+    }
+
+    .message-time {
+        font-size: 0.7rem;
+        color: #999;
+        margin-top: 4px;
+    }
+
+    .typing-indicator {
+        padding: 10px 15px;
+    }
+
+    .typing-bubble {
+        background: white;
+        border: 1px solid #e9ecef;
+        padding: 10px 14px;
+        border-radius: 18px;
+        display: inline-block;
+    }
+
+    .typing-bubble span {
+        width: 8px;
+        height: 8px;
+        background-color: #667eea;
+        border-radius: 50%;
+        display: inline-block;
+        margin: 0 2px;
+        animation: typing 1.4s infinite;
+    }
+
+    .typing-bubble span:nth-child(1) {
+        animation-delay: 0s;
+    }
+
+    .typing-bubble span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .typing-bubble span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+
+        0%,
+        60%,
+        100% {
+            transform: translateY(0);
+            opacity: 0.7;
+        }
+
+        30% {
+            transform: translateY(-10px);
+            opacity: 1;
+        }
+    }
+
+    .chat-input {
+        padding: 12px;
+        background: white;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .chat-input .form-control {
+        border-radius: 20px;
+        border: 1px solid #ddd;
+        padding: 10px 15px;
+    }
+
+    .chat-input .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .chat-input .btn {
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    @media (max-width: 480px) {
+        .chat-window {
+            width: calc(100vw - 40px);
+            height: calc(100vh - 120px);
+            right: 20px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const chatToggle = document.getElementById('chatToggle');
+        const chatClose = document.getElementById('chatClose');
+        const chatWindow = document.getElementById('chatWindow');
+        const chatForm = document.getElementById('chatForm');
+        const chatInput = document.getElementById('chatInput');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatIcon = chatToggle.querySelector('i');
+
+        // Toggle chat window
+        chatToggle.addEventListener('click', function () {
+            if (chatWindow.style.display === 'none' || chatWindow.style.display === '') {
+                // Open chat
+                chatWindow.style.display = 'flex';
+                chatInput.focus();
+                // Change icon to close
+                chatIcon.className = 'fas fa-times fs-3';
+            } else {
+                // Close chat
+                chatWindow.style.display = 'none';
+                // Change icon back to robot
+                chatIcon.className = 'fas fa-robot fs-3';
+            }
+        });
+
+        chatClose.addEventListener('click', function () {
+            chatWindow.style.display = 'none';
+            chatIcon.className = 'fas fa-robot fs-3';
+        });
+
+        // Handle form submission
+        chatForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Add user message
+            addMessage(message, 'user');
+            chatInput.value = '';
+
+            // Show typing indicator
+            typingIndicator.style.display = 'block';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Call API
+            fetch("{% url 'chatbot_api' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({ message: message })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    typingIndicator.style.display = 'none';
+                    if (data.success) {
+                        addMessage(data.response, 'ai');
+                    } else {
+                        addMessage("❌ Xin lỗi, có lỗi xảy ra: " + (data.error || 'Unknown error'), 'ai');
+                    }
+                })
+                .catch(error => {
+                    typingIndicator.style.display = 'none';
+                    addMessage("⚠️ Lỗi kết nối: " + error, 'ai');
+                });
+        });
+
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender}-message`;
+
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' +
+                now.getMinutes().toString().padStart(2, '0');
+
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'message-bubble';
+            bubbleDiv.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+
+            messageDiv.appendChild(bubbleDiv);
+
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time text-end';
+            timeDiv.textContent = timeStr;
+            messageDiv.appendChild(timeDiv);
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    });
+</script>

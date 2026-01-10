@@ -1,0 +1,59 @@
+{% extends 'quanly/base_admin.html' %}
+
+{% block title %}Lịch Đề Xuất AI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-4">
+        <h2><i class="fas fa-robot"></i> Lịch Đề Xuất AI</h2>
+        <p class="text-muted">Quản lý các lịch đề xuất chờ duyệt</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="fas fa-clipboard-list"></i> Lịch Đề Xuất Hiện Tại</h5>
+        </div>
+        <div class="card-body">
+            <h4>Mùa Giải: {{ season.name }}</h4>
+            <p><strong>Tổng số trận:</strong> {{ matches_count }}</p>
+
+            <h5 class="mt-4">Xem Trước (10 trận đầu tiên):</h5>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Vòng</th>
+                        <th>Ngày Giờ</th>
+                        <th>Đội Nhà</th>
+                        <th>Đội Khách</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for match in matches_preview %}
+                    <tr>
+                        <td>{{ match.round_number }}</td>
+                        <td>{{ match.match_date|date:"d/m/Y H:i" }}</td>
+                        <td>{{ match.home_team.name }}</td>
+                        <td>{{ match.away_team.name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="mt-4">
+                <form method="POST" action="{% url 'approve_ai_schedule_proposal' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Duyệt và Lưu
+                    </button>
+                </form>
+                <a href="{% url 'reject_ai_schedule_proposal' %}" class="btn btn-danger">
+                    <i class="fas fa-times"></i> Từ Chối
+                </a>
+                <a href="{% url 'manage_matches' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Quay Lại
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

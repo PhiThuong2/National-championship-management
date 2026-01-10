@@ -1,0 +1,83 @@
+{% extends 'quanly/base_admin.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>⚽ Quản lý Đội Bóng</h2>
+    <div>
+        <a href="{% url 'export_teams' %}" class="btn btn-success me-2">📥 Excel</a>
+        <a href="{% url 'add_team' %}" class="btn btn-primary">+ Thêm Đội</a>
+    </div>
+</div>
+
+<div class="card p-3 mb-3 bg-light border-0">
+    <form method="get" class="row g-2">
+        <div class="col-md-8">
+            <input type="text" name="q" class="form-control" placeholder="🔍 Tìm tên đội hoặc thành phố..."
+                value="{{ query|default:'' }}">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Tìm</button>
+        </div>
+        <div class="col-md-2">
+            <a href="{% url 'manage_teams' %}" class="btn btn-secondary w-100">Reset</a>
+        </div>
+    </form>
+</div>
+
+<div class="card shadow">
+    <table class="table table-hover mb-0">
+        <thead class="table-dark">
+            <tr>
+                <th>STT</th>
+                <th>Logo</th>
+                <th>Tên Đội</th>
+                <th>Sân Vận Động</th>
+                <th>HLV</th>
+                <th>Thành Phố</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for team in page_obj %}
+            <tr>
+                <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+                <td>{% if team.logo %}<img src="{{ team.logo.url }}" width="40">{% endif %}</td>
+                <td class="fw-bold">{{ team.name }}</td>
+                <td>{{ team.stadium }}</td>
+                <td>{{ team.current_coach.name|default:"--" }}</td>
+                <td>{{ team.city }}</td>
+                <td>
+                    <a href="{% url 'edit_team' team.id %}?next={{ request.get_full_path|urlencode }}"
+                        class="btn btn-sm btn-warning">Sửa</a>
+                    <a href="{% url 'delete_team' team.id %}" class="btn btn-sm btn-danger"
+                        onclick="return confirm('Xóa?')">Xóa</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center py-3">Không tìm thấy đội nào.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-3 d-flex justify-content-center">
+    <nav>
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page=1&q={{ query|default:'' }}">«</a></li>
+            <li class="page-item"><a class="page-link"
+                    href="?page={{ page_obj.previous_page_number }}&q={{ query|default:'' }}">Trước</a></li>
+            {% endif %}
+            <li class="page-item disabled"><span class="page-link">Trang {{ page_obj.number }} / {{page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link"
+                    href="?page={{ page_obj.next_page_number }}&q={{ query|default:'' }}">Sau</a></li>
+            <li class="page-item"><a class="page-link"
+                    href="?page={{ page_obj.paginator.num_pages }}&q={{ query|default:'' }}">»</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endblock %}

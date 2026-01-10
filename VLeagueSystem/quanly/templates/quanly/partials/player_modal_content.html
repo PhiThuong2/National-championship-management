@@ -1,0 +1,93 @@
+<div class="modal-header bg-success text-white">
+    <h5 class="modal-title fw-bold"><i class="fas fa-id-badge me-2"></i>Hồ sơ cầu thủ</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+
+<div class="modal-body bg-light">
+    <div class="text-center mb-4">
+        <div class="position-relative d-inline-block">
+            {% if player.avatar %}
+            <img src="{{ player.avatar.url }}" class="rounded-circle border border-4 border-white shadow-sm"
+                style="width: 110px; height: 110px; object-fit: cover;">
+            {% else %}
+            <div class="rounded-circle bg-white d-flex align-items-center justify-content-center border border-4 border-white shadow-sm"
+                style="width: 110px; height: 110px;">
+                <i class="fas fa-user fa-3x text-secondary"></i>
+            </div>
+            {% endif %}
+
+            <span class="position-absolute bottom-0 end-0 badge rounded-pill bg-danger border border-2 border-white">
+                #{{ player.jersey_number }}
+            </span>
+        </div>
+
+        <h4 class="mt-2 fw-bold mb-0">{{ player.name }}</h4>
+        <span class="badge bg-primary mt-1">{{ player.team.name }}</span>
+        <div class="text-muted small mt-1">{{ player.get_position_display }}</div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 small">
+                <div class="col-6 border-end">
+                    <div class="text-muted">Quốc tịch</div>
+                    <div class="fw-bold">{{ player.nationality }}</div>
+                </div>
+                <div class="col-6 ps-3">
+                    <div class="text-muted">Ngày sinh</div>
+                    <div class="fw-bold">{{ player.date_of_birth|date:"d/m/Y"|default:"--" }}</div>
+                </div>
+                <div class="col-6 border-end border-top pt-2">
+                    <div class="text-muted">Chiều cao</div>
+                    <div class="fw-bold">{% if player.height %}{{ player.height }} cm{% else %}--{% endif %}</div>
+                </div>
+                <div class="col-6 ps-3 border-top pt-2">
+                    <div class="text-muted">Cân nặng</div>
+                    <div class="fw-bold">{% if player.weight %}{{ player.weight }} kg{% else %}--{% endif %}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h6 class="fw-bold text-uppercase text-muted small border-bottom pb-1 mb-2">Thống kê mùa giải</h6>
+    <div class="row g-2 text-center">
+        <div class="col-3">
+            <div class="bg-white p-2 rounded border shadow-sm">
+                <div class="fw-bold text-primary fs-5">{{ stats.total_matches|default:0 }}</div>
+                <div style="font-size: 0.65rem;" class="text-uppercase fw-bold text-muted">Trận</div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="bg-white p-2 rounded border shadow-sm">
+                <div class="fw-bold text-success fs-5">{{ stats.total_goals|default:0 }}</div>
+                <div style="font-size: 0.65rem;" class="text-uppercase fw-bold text-muted">Bàn</div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="bg-white p-2 rounded border shadow-sm">
+                <div class="fw-bold text-info fs-5">{{ stats.total_assists|default:0 }}</div>
+                <div style="font-size: 0.65rem;" class="text-uppercase fw-bold text-muted">K.Tạo</div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="bg-white p-2 rounded border shadow-sm">
+                <div class="fw-bold">
+                    <span class="text-warning">{{ stats.total_yellow|default:0 }}</span><span
+                        class="text-muted mx-1">/</span><span class="text-danger">{{ stats.total_red|default:0 }}</span>
+                </div>
+                <div style="font-size: 0.65rem;" class="text-uppercase fw-bold text-muted">Thẻ</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer bg-light py-2">
+    {% if player.team %}
+    <button type="button" class="btn btn-sm btn-secondary" onclick="loadTeamModal('{{ player.team.id }}')">
+        <i class="fas fa-arrow-left me-1"></i>Về CLB
+    </button>
+    {% endif %}
+    <a href="{% url 'export_player_detail' player.id %}" class="btn btn-sm btn-success">
+        <i class="fas fa-file-excel me-1"></i>Tải Excel
+    </a>
+</div>

@@ -1,0 +1,46 @@
+{% extends 'quanly/base_admin.html' %}
+{% block content %}
+    <h2>💸 Thị Trường Chuyển Nhượng</h2>
+    <div class="card shadow mt-3">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Cầu thủ</th>
+                    <th>Từ đội</th>
+                    <th>Sang đội</th>
+                    <th>Giá trị (VND)</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transfers %}
+                <tr>
+                    <td class="fw-bold">{{ t.player.name }}</td>
+                    <td>{{ t.from_team.name }}</td>
+                    <td class="text-primary fw-bold">{{ t.to_team.name }}</td>
+                    <td>{{ t.transfer_fee }}</td> <td>
+                        {% if t.status == 'pending_approval' %}
+                            <span class="badge bg-warning text-dark">Chờ duyệt</span>
+                        {% elif t.status == 'approved' %}
+                            <span class="badge bg-success">Thành công</span>
+                        {% else %}
+                            <span class="badge bg-danger">Bị từ chối</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if t.status == 'pending_approval' %}
+                            <a href="{% url 'approve_transfer' t.id %}" class="btn btn-sm btn-success">✅ Duyệt</a>
+                            <a href="{% url 'reject_transfer' t.id %}" class="btn btn-sm btn-danger">❌ Hủy</a>
+                        {% else %}
+                            <span class="text-muted small">Đã xử lý</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center">Chưa có giao dịch nào.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

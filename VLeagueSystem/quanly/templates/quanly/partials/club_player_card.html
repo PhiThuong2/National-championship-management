@@ -1,0 +1,53 @@
+<div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+    <div class="card h-100 border-0 shadow-hover rounded-4 position-relative overflow-hidden player-card">
+        <div class="position-absolute top-0 end-0 m-3 z-1">
+            {% if player.status == 'Active' %}
+            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3">Đang thi
+                đấu</span>
+            {% elif player.status == 'Injured' %}
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3">Chấn
+                thương</span>
+            {% else %}
+            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3">{{player.get_status_display }}</span>
+            {% endif %}
+        </div>
+
+        <div class="card-body text-center p-4">
+            <div class="mb-3 position-relative d-inline-block">
+                {% if player.avatar %}
+                <img src="{{ player.avatar.url }}" class="rounded-circle shadow-sm object-fit-cover" width="100"
+                    height="100" alt="{{ player.name }}">
+                {% else %}
+                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto shadow-sm text-primary fw-bold display-5"
+                    style="width: 100px; height: 100px;">
+                    {{ player.name|slice:":1" }}
+                </div>
+                {% endif %}
+                <span
+                    class="position-absolute bottom-0 end-0 badge rounded-pill bg-primary border border-2 border-white small">
+                    #{{ player.jersey_number }}
+                </span>
+            </div>
+
+            <h5 class="fw-bold text-truncate mb-1" title="{{ player.name }}">{{ player.name }}</h5>
+            <p class="text-muted small mb-2">{{ player.get_position_display }}</p>
+
+            <div class="d-flex justify-content-center gap-2 mb-3">
+                <span class="badge bg-light text-dark border fw-normal">
+                    <i class="fas fa-flag me-1 text-muted"></i>{{ player.nationality }}
+                </span>
+                {% if player.registration_type == 'NgoaiBinh' %}
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-normal">Ngoại
+                    binh</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card-footer bg-transparent border-top-0 pb-4 pt-0 px-4">
+            <a href="{% url 'club_player_detail' player.id %}"
+                class="btn btn-outline-primary w-100 rounded-3 stretched-link hover-fill">
+                Xem Hồ sơ
+            </a>
+        </div>
+    </div>
+</div>

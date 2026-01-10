@@ -1,0 +1,483 @@
+{% extends 'quanly/base_fan.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block content %}
+<style>
+    /* --- CSS CHO TRẬN ĐẤU & TỈ SỐ --- */
+    .score-box {
+        font-size: 1.4rem;
+        font-weight: bold;
+        background: #343a40;
+        color: #fff;
+        padding: 4px 12px;
+        border-radius: 6px;
+        display: inline-block;
+        min-width: 80px;
+    }
+
+    .match-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .match-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .prediction-badge {
+        font-size: 0.85rem;
+        padding: 5px 12px;
+        border-radius: 20px;
+        background-color: #e9ecef;
+        color: #495057;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        margin-top: 8px;
+        border: 1px solid #ced4da;
+    }
+
+    /* --- CSS CHO BXH --- */
+    .rank-badge {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-weight: bold;
+        font-size: 0.8rem;
+    }
+
+    .rank-1 {
+        background: #ffd700;
+        color: #000;
+        box-shadow: 0 0 5px #ffd700;
+    }
+
+    .rank-2 {
+        background: #c0c0c0;
+        color: #000;
+    }
+
+    .rank-3 {
+        background: #cd7f32;
+        color: #fff;
+    }
+
+    /* --- CSS CHO THỐNG KÊ --- */
+    .stat-row {
+        transition: background 0.2s;
+        font-size: 0.95rem;
+        cursor: default;
+    }
+
+    .stat-row:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="main-container">
+
+        <div class="row">
+            <div class="col-lg-7 mb-4">
+                <div class="card shadow-sm border-0">
+
+                    <div class="card-header bg-primary text-white pb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0 fw-bold text-uppercase">
+                                <i class="fas fa-calendar-alt me-2"></i>Lịch Thi Đấu
+                            </h5>
+                            {% if season %}
+                            <span class="badge bg-light text-primary fw-bold">{{ season.name }}</span>
+                            {% endif %}
+                        </div>
+
+                        <form method="get" action="{% url 'home' %}" id="filterForm"
+                            class="bg-white p-2 rounded text-dark shadow-sm row g-2 align-items-center">
+                            <div class="col-md-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light fw-bold">Vòng</span>
+                                    <select name="round" class="form-select fw-bold text-primary"
+                                        onchange="document.getElementById('filterForm').submit()">
+                                        <option value="all">-- Tất cả --</option>
+                                        {% for r in rounds %}
+                                        <option value="{{ r }}" {% if r|stringformat:"s" == selected_round|stringformat:"s" %}selected{% endif %}>Vòng {{ r }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-md-8">
+                                <div class="btn-group w-100 btn-group-sm" role="group">
+                                    <input type="radio" class="btn-check" name="status" id="st_all" value="all" {% if not filter_status or filter_status == 'all' %}checked{% endif %} onchange="document.getElementById('filterForm').submit()">
+                                    <label class="btn btn-outline-secondary fw-bold" for="st_all">Tất cả</label>
+
+                                    <input type="radio" class="btn-check" name="status" id="st_done" value="predicted" {% if filter_status == 'predicted' %}checked{% endif %} onchange="document.getElementById('filterForm').submit()">
+                                    <label class="btn btn-outline-success fw-bold" for="st_done">Đã dự đoán</label>
+
+                                    <input type="radio" class="btn-check" name="status" id="st_not" value="not_predicted" {% if filter_status == 'not_predicted' %}checked{% endif %} onchange="document.getElementById('filterForm').submit()">
+                                    <label class="btn btn-outline-danger fw-bold" for="st_not">Chưa dự đoán</label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="card-body bg-light">
+                        {% for match in matches %}
+                        <div
+                            class="match-card bg-white p-3 mb-3 rounded shadow-sm border-start border-5 {% if match.status == 'FINISHED' %}border-secondary{% else %}border-success{% endif %} position-relative">
+
+                            <span
+                                class="position-absolute top-0 end-0 badge bg-light text-muted border rounded-pill mt-2 me-2 small">
+                                Vòng {{ match.round_number }}
+                            </span>
+
+                            <div class="row align-items-center mt-2">
+                                <div class="col-4 text-end">
+                                    <div class="d-flex align-items-center justify-content-end">
+                                        <span class="fw-bold me-2 d-none d-md-block">{{ match.home_team.name }}</span>
+                                        <span class="fw-bold me-2 d-md-none">{{ match.home_team.name|slice:":3" }}</span>
+                                        {% if match.home_team.logo %}
+                                        <img src="{{ match.home_team.logo.url }}" class="team-logo"
+                                            style="width:40px; height:40px; object-fit:contain;">
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="col-4 text-center">
+                                    {% if match.status == 'FINISHED' %}
+                                    <div class="score-box">{{ match.home_score }} - {{ match.away_score }}</div>
+                                    <div class="small text-muted mt-1 fw-bold" style="font-size: 0.7rem;">FT</div>
+                                    {% else %}
+                                    <div class="fw-bold text-muted mb-1" style="font-size: 1.2rem;">VS</div>
+                                    <div class="badge bg-primary bg-opacity-10 text-primary border border-primary">
+                                        {{ match.match_date|date:"H:i d/m" }}
+                                    </div>
+                                    <div class="small text-muted mt-1">{{ match.home_team.stadium }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-4 text-start">
+                                    <div class="d-flex align-items-center">
+                                        {% if match.away_team.logo %}
+                                        <img src="{{ match.away_team.logo.url }}" class="team-logo me-2"
+                                            style="width:40px; height:40px; object-fit:contain;">
+                                        {% endif %}
+                                        <span class="fw-bold d-none d-md-block">{{ match.away_team.name }}</span>
+                                        <span class="fw-bold d-md-none">{{ match.away_team.name|slice:":3" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if match.id in ai_predictions_map %}
+                            <div class="mt-2 pt-2 border-top"
+                                style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); border-radius: 8px; padding: 12px;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-robot text-primary me-2"></i>
+                                        <span class="fw-bold text-primary small">AI DỰ ĐOÁN</span>
+                                    </div>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">
+                                        {{ ai_predictions_map|get_item:match.id|get_attr:"predicted_home_score" }} - {{ ai_predictions_map|get_item:match.id|get_attr:"predicted_away_score" }}
+                                    </span>
+                                </div>
+
+                                <div class="row g-1 small mt-2">
+                                    {% with ai_pred=ai_predictions_map|get_item:match.id %}
+                                    <div class="col-4">
+                                        <div class="text-center mb-1"
+                                            style="font-size: 0.7rem; font-weight: 600; color: #28a745;">THẮNG</div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-success"
+                                                style="width: {{ ai_pred.win_probability|mul:100|floatformat:0 }}%">
+                                            </div>
+                                        </div>
+                                        <div class="text-center mt-1" style="font-size: 0.7rem; font-weight: 600;">{{ ai_pred.win_probability|mul:100|floatformat:0 }}%</div>
+                                    </div>
+
+                                    <div class="col-4">
+                                        <div class="text-center mb-1"
+                                            style="font-size: 0.7rem; font-weight: 600; color: #ffc107;">HÒA</div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-warning"
+                                                style="width: {{ ai_pred.draw_probability|mul:100|floatformat:0 }}%">
+                                            </div>
+                                        </div>
+                                        <div class="text-center mt-1" style="font-size: 0.7rem; font-weight: 600;">{{ ai_pred.draw_probability|mul:100|floatformat:0 }}%</div>
+                                    </div>
+
+                                    <div class="col-4">
+                                        <div class="text-center mb-1"
+                                            style="font-size: 0.7rem; font-weight: 600; color: #dc3545;">THUA</div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-danger"
+                                                style="width: {{ ai_pred.loss_probability|mul:100|floatformat:0 }}%">
+                                            </div>
+                                        </div>
+                                        <div class="text-center mt-1" style="font-size: 0.7rem; font-weight: 600;">{{ ai_pred.loss_probability|mul:100|floatformat:0 }}%</div>
+                                    </div>
+                                    {% endwith %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="text-center mt-3 pt-2 border-top border-light">
+                                {% if match.id in predictions_map %}
+                                <div class="prediction-badge" title="Dự đoán của bạn">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    Bạn đoán: <strong class="ms-1 text-dark">{{ predictions_map|get_item:match.id }}</strong>
+                                </div>
+                                {% else %}
+                                {% if match.status != 'FINISHED' %}
+                                <form method="post" action="{% url 'predict_match' match.id %}"
+                                    class="d-flex justify-content-center align-items-center gap-2 mt-1">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next"
+                                        value="{% url 'home' %}?round={{ selected_round }}&status={{ filter_status }}">
+                                    <span class="fw-bold text-muted small text-uppercase">Dự đoán:</span>
+                                    <input type="number" name="home_score"
+                                        class="form-control form-control-sm text-center fw-bold" style="width: 50px;"
+                                        min="0" placeholder="-" required>
+                                    <span class="fw-bold">:</span>
+                                    <input type="number" name="away_score"
+                                        class="form-control form-control-sm text-center fw-bold" style="width: 50px;"
+                                        min="0" placeholder="-" required>
+                                    <button type="submit" class="btn btn-sm btn-success fw-bold px-3">Gửi</button>
+                                </form>
+                                {% else %}
+                                <small class="text-muted fst-italic"><i class="fas fa-lock me-1"></i> Đã hết hạn dự
+                                    đoán</small>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-5 text-muted bg-white rounded shadow-sm border border-dashed">
+                            <i class="fas fa-search fa-3x mb-3 text-secondary opacity-50"></i>
+                            <h5>Không tìm thấy trận đấu nào</h5>
+                            <p class="mb-0 small">Hãy thử thay đổi Vòng đấu hoặc Trạng thái lọc.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-trophy me-2"></i>BẢNG XẾP HẠNG V-LEAGUE</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
+                            <table class="table table-hover bxh-table mb-0 align-middle">
+                                <thead class="table-dark sticky-top small">
+                                    <tr>
+                                        <th class="text-center">#</th>
+                                        <th>CLB</th>
+                                        <th class="text-center">Trận</th>
+                                        <th class="text-center">HS</th>
+                                        <th class="text-center">Điểm</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in standings %}
+                                    <tr onclick="loadTeamModal('{{ row.team.id }}')" style="cursor: pointer;">
+                                        <td class="text-center">
+                                            {% if row.rank <= 3 %} <span class="rank-badge rank-{{ row.rank }}">{{ row.rank }}</span>
+                                                {% else %}
+                                                <span class="rank-badge bg-light text-secondary border">{{ row.rank }}</span>
+                                                {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if row.team.logo %}
+                                                <img src="{{ row.team.logo.url }}" width="24" height="24"
+                                                    class="me-2 rounded-circle border">
+                                                {% endif %}
+                                                <span class="fw-bold text-dark">{{ row.team.name }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center text-muted">{{ row.played }}</td>
+                                        <td
+                                            class="text-center fw-bold {% if row.gd > 0 %}text-success{% elif row.gd < 0 %}text-danger{% endif %}">
+                                            {{ row.gd|stringformat:"+d" }}</td>
+                                        <td class="text-center fw-bold text-primary">{{ row.points }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-chart-pie me-2"></i>THỐNG KÊ</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-light dropdown-toggle fw-bold text-uppercase"
+                                type="button" id="statDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                ⚽ Vua Phá Lưới
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                <li><a class="dropdown-item py-2" href="javascript:void(0)"
+                                        onclick="changeStat('goals', '⚽  Phá Lưới')">⚽ Vua Phá Lưới</a></li>
+                                <li><a class="dropdown-item py-2" href="javascript:void(0)"
+                                        onclick="changeStat('assists', '👟 Kiến Tạo')">👟 Vua Kiến Tạo</a></li>
+                                <li><a class="dropdown-item py-2" href="javascript:void(0)"
+                                        onclick="changeStat('interceptions', '🛡️ Đánh chặn')">🛡️ Vua đánh chặn</a></li>
+                                <li><a class="dropdown-item py-2" href="javascript:void(0)"
+                                        onclick="changeStat('saves', '🧤 Găng Tay Vàng')">🧤 Găng Tay Vàng</a></li>
+                                <li><a class="dropdown-item py-2" href="javascript:void(0)"
+                                        onclick="changeStat('cards', '🟨 Thẻ Phạt')">🟨 Thẻ Phạt</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-0">
+                        <div id="stat-goals" class="stat-list">
+                            <ul class="list-group list-group-flush">
+                                {% for p in top_scorers %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center stat-row">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-secondary rounded-pill me-3" style="width:22px;">{{ forloop.counter }}</span>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ p.player.name }}</div>
+                                            <small class="text-muted">{{ p.player.team.name }}</small>
+                                        </div>
+                                    </div>
+                                    <span class="fw-bold text-danger fs-6">{{ p.goals }} <small
+                                            class="text-muted fw-normal">bàn</small></span>
+                                </li>
+                                {% empty %}<li class="list-group-item text-center text-muted py-3">Chưa có dữ liệu</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <div id="stat-assists" class="stat-list d-none">
+                            <ul class="list-group list-group-flush">
+                                {% for p in top_assists %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center stat-row">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-secondary rounded-pill me-3" style="width:22px;">{{ forloop.counter }}</span>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ p.player.name }}</div>
+                                            <small class="text-muted">{{ p.player.team.name }}</small>
+                                        </div>
+                                    </div>
+                                    <span class="fw-bold text-primary fs-6">{{ p.assists }} <small
+                                            class="text-muted fw-normal">lần</small></span>
+                                </li>
+                                {% empty %}<li class="list-group-item text-center text-muted py-3">Chưa có dữ liệu</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <div id="stat-interceptions" class="stat-list d-none">
+                            <ul class="list-group list-group-flush">
+                                {% for item in top_interceptions %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center stat-row">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-secondary rounded-pill me-3"
+                                            style="width:22px;">{{forloop.counter }}</span>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ item.player.name }}</div>
+                                            <small class="text-muted">{{ item.player.team.name }}</small>
+                                        </div>
+                                    </div>
+                                    <span class="fw-bold text-success fs-6">{{ item.count }} <small
+                                            class="text-muted fw-normal">lần</small></span>
+                                </li>
+                                {% empty %}<li class="list-group-item text-center text-muted py-3">Chưa có dữ liệu</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div id="stat-saves" class="stat-list d-none">
+                            <ul class="list-group list-group-flush">
+                                {% for item in top_saves %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center stat-row">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-secondary rounded-pill me-3"
+                                            style="width:22px;">{{forloop.counter }}</span>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ item.player.name }}</div>
+                                            <small class="text-muted">{{ item.player.team.name }}</small>
+                                        </div>
+                                    </div>
+                                    <span class="fw-bold text-success fs-6">{{ item.count }} <small
+                                            class="text-muted fw-normal">lần</small></span>
+                                </li>
+                                {% empty %}<li class="list-group-item text-center text-muted py-3">Chưa có dữ liệu</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <div id="stat-cards" class="stat-list d-none">
+                            <ul class="list-group list-group-flush">
+                                {% for item in top_cards %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center stat-row">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-secondary rounded-pill me-3"
+                                            style="width:22px;">{{forloop.counter }}</span>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ item.stat.player.name }}</div>
+                                            <small class="text-muted">{{ item.stat.player.team.name }}</small>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-warning text-dark me-1">{{ item.yellow_cards }}</span>
+                                        <span class="badge bg-danger">{{ item.red_cards }}</span>
+                                    </div>
+                                </li>
+                                {% empty %}<li class="list-group-item text-center text-muted py-3">Chưa có dữ liệu</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function loadTeamModal(teamId) {
+        const modalEl = document.getElementById('infoModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+        document.getElementById('modalContent').innerHTML = '<div class="modal-body text-center py-5"><div class="spinner-border text-primary"></div></div>';
+        fetch(`/ajax/team/${teamId}/`)
+            .then(response => response.text())
+            .then(html => { document.getElementById('modalContent').innerHTML = html; })
+            .catch(error => { document.getElementById('modalContent').innerHTML = '<div class="modal-body text-danger">Lỗi tải dữ liệu</div>'; });
+    }
+
+    function loadPlayerModal(playerId, teamId) {
+        document.getElementById('modalContent').innerHTML = '<div class="modal-body text-center py-5"><div class="spinner-border text-success"></div></div>';
+        fetch(`/ajax/player/${playerId}/`)
+            .then(response => response.text())
+            .then(html => { document.getElementById('modalContent').innerHTML = html; });
+    }
+
+    function changeStat(type, label) {
+        document.getElementById('statDropdown').textContent = label;
+        document.querySelectorAll('.stat-list').forEach(el => el.classList.add('d-none'));
+        const targetEl = document.getElementById('stat-' + type);
+        if (targetEl) targetEl.classList.remove('d-none');
+    }
+</script>
+
+<div class="modal fade" id="infoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content" id="modalContent">
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

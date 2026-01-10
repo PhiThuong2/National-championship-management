@@ -1,0 +1,199 @@
+{% extends 'quanly/base_club.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4 fade-in-up">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">
+                <i class="fas fa-users text-primary me-2"></i>Danh sách Cầu thủ
+            </h2>
+            <p class="text-muted mb-0">Quản lý đội hình hiện tại của {{ team.name }}</p>
+        </div>
+        <div>
+            <a href="{% url 'transfer_market' %}" class="btn btn-primary shadow-sm hover-scale">
+                <i class="fas fa-plus me-1"></i> Mua cầu thủ mới
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden fade-in-up" style="animation-delay: 0.1s;">
+        <div class="card-body bg-white p-4">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold text-secondary small">TÌM KIẾM</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 text-muted"><i
+                                class="fas fa-search"></i></span>
+                        <input type="text" name="q" class="form-control bg-light border-start-0 ps-0"
+                            placeholder="Nhập tên cầu thủ..." value="{{ current_query }}">
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary small">LOẠI CẦU THỦ</label>
+                    <select name="type" class="form-select bg-light cursor-pointer">
+                        <option value="">Tất cả</option>
+                        <option value="noibinh" {% if current_type  ==  'noibinh' %}selected{% endif %}>Nội binh</option>
+                        <option value="ngoaibinh" {% if current_type    ==  'ngoaibinh' %}selected{% endif %}>Ngoại binh
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary small">HỢP ĐỒNG</label>
+                    <select name="contract" class="form-select bg-light cursor-pointer">
+                        <option value="">Tất cả</option>
+                        <option value="expiring" {% if current_contract    ==     'expiring' %}selected{% endif %}>Sắp hết hạn (6
+                            tháng)</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-dark w-100 fw-bold">
+                        Lọc Danh sách
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-4 fade-in-up" id="player-grid" style="animation-delay: 0.2s;">
+        {% for player in page_obj %}
+        {% include 'quanly/partials/club_player_card.html' %}
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <div class="mb-3">
+                <i class="fas fa-search fa-3x text-muted opacity-25"></i>
+            </div>
+            <h5 class="text-secondary fw-normal">Không tìm thấy cầu thủ nào phù hợp.</h5>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Infinite Scroll Loading Indicator -->
+    <div id="loading-indicator" class="text-center py-4 d-none">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="text-muted mt-2 small">Đang tải thêm...</p>
+    </div>
+
+    <div id="end-of-list" class="text-center py-4 d-none">
+        <p class="text-muted small">--- Hết danh sách ---</p>
+    </div>
+
+    <!-- Hidden element to trigger loading -->
+    <div id="scroll-sentinel"></div>
+
+    {% if page_obj.has_other_pages %}
+    <!-- Pagination hidden but used for initial state -->
+    <div class="d-none" id="pagination-data" data-next-page="{{ page_obj.next_page_number }}"></div>
+    {% endif %}
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const paginationData = document.getElementById('pagination-data');
+        let nextPage = paginationData ? paginationData.dataset.nextPage : null;
+        let isLoading = false;
+
+        const sentinel = document.getElementById('scroll-sentinel');
+        const grid = document.getElementById('player-grid');
+        const loader = document.getElementById('loading-indicator');
+        const endMsg = document.getElementById('end-of-list');
+
+        if (!nextPage) {
+            endMsg.classList.remove('d-none');
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && nextPage && !isLoading) {
+                loadMorePlayers();
+            }
+        }, { rootMargin: "200px" });
+
+        if (sentinel) observer.observe(sentinel);
+
+        function loadMorePlayers() {
+            isLoading = true;
+            loader.classList.remove('d-none');
+
+            // Construct URL with current filters
+            const url = new URL(window.location.href);
+            url.searchParams.set('page', nextPage);
+            url.searchParams.set('ajax', '1');
+
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Append new HTML
+                    grid.insertAdjacentHTML('beforeend', data.html);
+
+                    // Update pagination state
+                    if (data.has_next) {
+                        nextPage = data.next_page_number;
+                    } else {
+                        nextPage = null;
+                        endMsg.classList.remove('d-none');
+                        observer.unobserve(sentinel);
+                    }
+                })
+                .catch(err => console.error('Error loading more players:', err))
+                .finally(() => {
+                    isLoading = false;
+                    loader.classList.add('d-none');
+                });
+        }
+    });
+</script>
+
+</div>
+
+<style>
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .shadow-hover {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .shadow-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    .hover-scale {
+        transition: transform 0.2s;
+    }
+
+    .hover-scale:hover {
+        transform: scale(1.05);
+    }
+
+    .hover-fill:hover {
+        background-color: var(--bs-primary);
+        color: white;
+    }
+
+    .fade-in-up {
+        animation: fadeInUp 0.5s ease-out forwards;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    @keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends 'quanly/base_admin.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>👥 Quản Lý Người Dùng</h2>
+</div>
+
+<div class="card p-3 mb-3 bg-light border-0">
+    <form method="get" class="row g-2">
+        <div class="col-md-4">
+            <input type="text" name="q" class="form-control" placeholder="🔍 Tìm theo email hoặc tên..." value="{{ query|default:'' }}">
+        </div>
+        <div class="col-md-3">
+            <select name="role" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Tất cả vai trò --</option>
+                <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admin</option>
+                <option value="club_rep" {% if role_filter == 'club_rep' %}selected{% endif %}>Đại diện CLB</option>
+                <option value="fan" {% if role_filter == 'fan' %}selected{% endif %}>Fan hâm mộ</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
+        </div>
+        <div class="col-md-2">
+            <a href="{% url 'manage_users' %}" class="btn btn-secondary w-100">Reset</a>
+        </div>
+    </form>
+</div>
+
+<div class="card shadow">
+    <table class="table table-hover mb-0">
+        <thead class="table-dark">
+            <tr>
+                <th>STT</th>
+                <th>Email</th>
+                <th>Họ tên</th>
+                <th>Vai trò</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in page_obj %}
+            <tr>
+                <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+                
+                <td class="fw-bold">{{ u.email }}</td>
+                <td>{{ u.first_name }}</td>
+                <td>
+                    {% if u.role == 'admin' %}
+                        <span class="badge bg-danger">Admin</span>
+                    {% elif u.role == 'club_rep' %}
+                        <span class="badge bg-warning text-dark">CLB</span>
+                        <div class="small text-primary fw-bold mt-1">
+                            {{ u.team.name|default:"(Chưa gán đội)" }}
+                        </div>
+                    {% else %}
+                        <span class="badge bg-info text-dark">Fan</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if u.is_active %}
+                        <span class="text-success fw-bold">Active</span>
+                    {% else %}
+                        <span class="text-danger fw-bold">Locked</span>
+                    {% endif %}
+                </td>
+<td>
+    {% if u != user %} <div class="btn-group" role="group">
+            <a href="{% url 'edit_user' u.id %}" class="btn btn-sm btn-primary" title="Sửa thông tin">✏️</a>
+
+            {% if u.is_active %}
+                <a href="{% url 'toggle_user_status' u.id %}" class="btn btn-sm btn-outline-warning text-dark" title="Khóa" onclick="return confirm('Khóa tài khoản này?')">🔒</a>
+            {% else %}
+                <a href="{% url 'toggle_user_status' u.id %}" class="btn btn-sm btn-success" title="Mở lại">🔓</a>
+            {% endif %}
+
+            <a href="{% url 'delete_user' u.id %}" class="btn btn-sm btn-danger" title="Xóa vĩnh viễn" onclick="return confirm('CẢNH BÁO: Hành động này không thể hoàn tác.\n\nBạn có chắc chắn muốn xóa vĩnh viễn tài khoản {{ u.email }} không?')">🗑️</a>
+        </div>
+
+        {% if u.role == 'fan' %}
+            <a href="{% url 'promote_user' u.id %}" class="btn btn-sm btn-warning text-dark ms-1" title="Thăng chức">⬆️</a>
+        {% endif %}
+
+    {% else %}
+        <span class="text-muted small">(Tôi)</span>
+    {% endif %}
+</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center py-4 text-muted">Không tìm thấy người dùng nào phù hợp.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-4 d-flex justify-content-center">
+    <nav>
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1&q={{ query|default:'' }}&role={{ role_filter|default:'' }}">« Đầu</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ query|default:'' }}&role={{ role_filter|default:'' }}">Trước</a>
+                </li>
+            {% endif %}
+
+            <li class="page-item disabled">
+                <span class="page-link fw-bold text-dark">
+                    Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ query|default:'' }}&role={{ role_filter|default:'' }}">Sau</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&q={{ query|default:'' }}&role={{ role_filter|default:'' }}">Cuối »</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endblock %}
