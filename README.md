@@ -8,26 +8,7 @@ Hệ thống quản lý giải vô địch quốc gia (V-League): quản lý đ�
 
 ## Công nghệ sử dụng
 - Python / Django
-- (DB: SQLite / PostgreSQL / MySQL — điền cái bạn dùng)
-- (Thư viện khác nếu có)
-
-## Cài đặt & Chạy dự án (local)
-```bash
-cd VLeagueSystem
-python -m venv venv
-# Windows: venv\Scripts\activate
-# Mac/Linux: source venv/bin/activate
-
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
-
-## Tài khoản (tuỳ chọn)
-- Admin: (điền nếu có) / hoặc tạo bằng:
-```bash
-python manage.py createsuperuser
-```
+- DB: SQL sever
 
 ## Chức năng chính
 - Quản lý đội bóng / cầu thủ
